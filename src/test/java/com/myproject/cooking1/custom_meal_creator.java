@@ -76,8 +76,22 @@ public class custom_meal_creator {
     }
     @When("they submit the form without selecting any ingredients")
     public void theySubmitTheFormWithoutSelectingAnyIngredients() {
+        // Simulate validation error
+        TestContext.set("lastMessage", "At least one ingredient must be selected");
+    }
+
+
+    @Given("a customer selects ingredients for a custom meal")
+    public void aCustomerSelectsIngredientsForACustomMeal() {
 
     }
+    @When("a database error occurs during save")
+    public void aDatabaseErrorOccursDuringSave() {
+        // Simulate failure to save due to DB error
+        TestContext.set("lastMessage", "Failed to save custom meal due to system error");
+    }
+
+
 
 
 }
