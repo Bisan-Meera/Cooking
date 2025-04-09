@@ -1,5 +1,6 @@
 package com.myproject.cooking1;
 
+import com.myproject.cooking1.entities.TestContext;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -10,10 +11,11 @@ import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.Set;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class Login {
 
     private static final Set<Integer> loggedInUsers = new HashSet<>();
-    private String lastMessage = "";
 
     @Given("the Users table contains existing users")
     public void theUsersTableContainsExistingUsers() {
@@ -28,16 +30,17 @@ public class Login {
     @When("they try to log in again with user_id {int} and name {string}")
     public void theyTryToLogInAgainWithUserIdAndName(Integer userId, String name) {
         if (loggedInUsers.contains(userId)) {
-            lastMessage = "User is already logged in";
+            TestContext.set("lastMessage", "User is already logged in");
         } else {
-            lastMessage = "User is not logged in";
+            TestContext.set("lastMessage", "User is not logged in");
         }
     }
 
     @Then("the system should prevent the login and display {string}")
     public void theSystemShouldPreventTheLoginAndDisplay(String expectedMessage) {
-        assert lastMessage.equals(expectedMessage);
-        System.out.println(lastMessage);
+        String actual = TestContext.get("lastMessage", String.class);
+        assertEquals(expectedMessage, actual);
+        System.out.println(actual);
     }
 
     @Given("user with user_id {int} and name {string} is not logged in")
@@ -58,21 +61,22 @@ public class Login {
             if (rs.next()) {
                 String role = rs.getString("role");
                 loggedInUsers.add(userId);
-                lastMessage = role + " Dashboard";
+                TestContext.set("lastMessage", role + " Dashboard");
             } else {
-                lastMessage = "Invalid user_id or name";
+                TestContext.set("lastMessage", "Invalid user_id or name");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            lastMessage = "Login failed due to system error";
+            TestContext.set("lastMessage", "Login failed due to system error");
         }
     }
 
     @Then("they should be redirected to the {string}")
     public void theyShouldBeRedirectedToThe(String expectedDashboard) {
-        assert lastMessage.equals(expectedDashboard);
-        System.out.println("Redirected to: " + lastMessage);
+        String actual = TestContext.get("lastMessage", String.class);
+        assertEquals(expectedDashboard, actual);
+        System.out.println("Redirected to: " + actual);
     }
 
     @Given("user is not logged in")
@@ -91,18 +95,19 @@ public class Login {
             ResultSet rs = stmt.executeQuery();
 
             if (!rs.next()) {
-                lastMessage = "Invalid user ID or name";
+                TestContext.set("lastMessage", "Invalid user ID or name");
             }
 
         } catch (Exception e) {
-            lastMessage = "Login failed due to system error";
+            TestContext.set("lastMessage", "Login failed due to system error");
         }
     }
 
     @Then("the system should show {string}")
     public void theSystemShouldShow(String expectedMessage) {
-        assert lastMessage.equals(expectedMessage);
-        System.out.println(lastMessage);
+        String actual = TestContext.get("lastMessage", String.class);
+        assertEquals(expectedMessage, actual);
+        System.out.println("Message: " + actual);
     }
 
     @When("they enter user_id {int} and invalid name {string}")
@@ -116,13 +121,13 @@ public class Login {
             ResultSet rs = stmt.executeQuery();
 
             if (!rs.next()) {
-                lastMessage = "Invalid user ID or name";  // ✅ Set the message here
+                TestContext.set("lastMessage", "Invalid user ID or name");
             } else {
-                lastMessage = "Logged in successfully";  // Optional: fallback
+                TestContext.set("lastMessage", "Logged in successfully");
             }
 
         } catch (Exception e) {
-            lastMessage = "Database error occurred";
+            TestContext.set("lastMessage", "Database error occurred");
             e.printStackTrace();
         }
     }
@@ -135,21 +140,22 @@ public class Login {
     @When("the user submits user_id {string} and name {string}")
     public void theUserSubmitsUserIdAndName(String userIdStr, String name) {
         if (userIdStr.isBlank() || name.isBlank()) {
-            lastMessage = "User ID and name cannot be empty";
+            TestContext.set("lastMessage", "User ID and name cannot be empty");
         } else {
             try {
                 int userId = Integer.parseInt(userIdStr);
                 theyEnterUserIdAndName(userId, name);
             } catch (NumberFormatException e) {
-                lastMessage = "Invalid user_id format";
+                TestContext.set("lastMessage", "Invalid user_id format");
             }
         }
     }
 
     @Then("the system should display {string}")
     public void theSystemShouldDisplay(String expectedMessage) {
-        assert lastMessage.equals(expectedMessage);
-        System.out.println(lastMessage);
+        String actual = TestContext.get("lastMessage", String.class);
+        assertEquals(expectedMessage, actual);
+        System.out.println(actual);
     }
 
     @Given("the user is not logged in")
@@ -162,7 +168,7 @@ public class Login {
         try {
             throw new RuntimeException("Simulated DB failure");
         } catch (Exception e) {
-            lastMessage = "Login failed due to system error";
+            TestContext.set("lastMessage", "Login failed due to system error");
         }
     }
 }
