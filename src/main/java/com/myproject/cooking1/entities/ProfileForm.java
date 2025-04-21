@@ -27,4 +27,12 @@ public class ProfileForm {
         return "Preferences saved successfully";
     }
 
+    public String getPreferences() {
+        if (preferences == null || preferences.trim().isEmpty()) {
+            return "No preferences specified";
+        }
+        return preferences;
+    }
+
+
 }

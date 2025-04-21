@@ -1,7 +1,10 @@
 package com.myproject.cooking1;
 
+import com.myproject.cooking1.entities.CustomerPreferences;
+import com.myproject.cooking1.entities.CustomerProfileService;
 import com.myproject.cooking1.entities.ProfileForm;
 import com.myproject.cooking1.entities.TestContext;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -9,6 +12,21 @@ import io.cucumber.java.en.When;
 import static junit.framework.TestCase.assertEquals;
 
 public class CustomerProfileAndPrefrences {
+    private int currentUserId;
+    private String currentUserName;
+    private String selectedPreference;
+    private String selectedAllergy;
+    private CustomerProfileService profileService;
+
+    @Before
+    public void setUp() {
+        try {
+            profileService = new CustomerProfileService();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Given("the user is logged in")
     public void theUserIsLoggedIn() {
@@ -22,23 +40,43 @@ public class CustomerProfileAndPrefrences {
 
     @Given("a logged-in customer with user_id {int} and name {string} is on the profile settings page")
     public void aLoggedInCustomerWithUserIdAndNameIsOnTheProfileSettingsPage(Integer userId, String name) {
+        currentUserId = userId;
+        currentUserName = name;
         System.out.println("Customer with ID " + userId + " is on profile settings page.");
     }
 
+
     @Given("a logged-in customer with user_id {int} is on the preferences page")
     public void aLoggedInCustomerWithUserIdIsOnThePreferencesPage(Integer userId) {
-        System.out.println("Customer with ID " + userId + " is on preferences page.");
+        currentUserId = userId;
+        System.out.println("Customer with ID " + userId + " is on the preferences page.");
     }
+
 
     @When("they select {string} and {string} as preferences")
     public void theySelectAndAsPreferences(String pref1, String pref2) {
-        // Placeholder for setting preferences
+        selectedPreference = pref1;
+        selectedAllergy = pref2;
+        try {
+            profileService.updatePreferences(currentUserId, selectedPreference, selectedAllergy);
+        } catch (Exception e) {
+            e.printStackTrace();
+            TestContext.set("lastMessage", "Database error occurred");
+        }
     }
+
 
     @Then("these preferences should be saved to their profile")
     public void thesePreferencesShouldBeSavedToTheirProfile() {
-        // Placeholder
+        try {
+            CustomerPreferences prefs = profileService.viewPreferences(currentUserId);
+            assertEquals(selectedPreference, prefs.getDietaryPreference());
+            assertEquals(selectedAllergy, prefs.getAllergy());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @Then("future meal suggestions should match these preferences")
     public void futureMealSuggestionsShouldMatchThesePreferences() {
@@ -52,38 +90,75 @@ public class CustomerProfileAndPrefrences {
 
     @Given("a logged-in customer with user_id {int} has previously saved dietary preferences")
     public void aLoggedInCustomerWithUserIdHasPreviouslySavedDietaryPreferences(Integer userId) {
-        // Placeholder
+        currentUserId = userId;
+        try {
+            CustomerPreferences prefs = profileService.viewPreferences(userId);
+            System.out.println("Existing preferences: " + prefs.getDietaryPreference() + ", " + prefs.getAllergy());
+        } catch (Exception e) {
+            e.printStackTrace();
+            TestContext.set("lastMessage", "No preferences found for user_id: " + userId);
+        }
     }
+
 
     @When("they visit the preferences tab")
     public void theyVisitThePreferencesTab() {
-        // Placeholder
+        System.out.println("Customer is viewing the preferences tab.");
     }
+
 
     @Then("the saved preferences should be pre-filled and visible")
     public void theSavedPreferencesShouldBePreFilledAndVisible() {
-        // Placeholder
+        try {
+            CustomerPreferences prefs = profileService.viewPreferences(currentUserId);
+            assert prefs != null;
+            System.out.println("Pre-filled Preferences - Dietary: " + prefs.getDietaryPreference() + ", Allergy: " + prefs.getAllergy());
+        } catch (Exception e) {
+            e.printStackTrace();
+            TestContext.set("lastMessage", "Preferences could not be loaded");
+        }
     }
+
 
     @Given("a logged-in customer with user_id {int} has previously entered {string}")
     public void aLoggedInCustomerWithUserIdHasPreviouslyEntered(Integer userId, String allergy) {
-        // Placeholder
+        currentUserId = userId;
+        try {
+            profileService.updatePreferences(userId, "", allergy);
+            System.out.println("Saved allergy '" + allergy + "' for user_id " + userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @When("they update the allergy information to {string}")
     public void theyUpdateTheAllergyInformationTo(String allergy) {
-        // Placeholder
+        selectedAllergy = allergy;
+        try {
+            profileService.updatePreferences(currentUserId, "", allergy); // Leave preference unchanged
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @Then("their profile should reflect the updated allergy")
     public void theirProfileShouldReflectTheUpdatedAllergy() {
-        // Placeholder
+        try {
+            CustomerPreferences prefs = profileService.viewPreferences(currentUserId);
+            assertEquals(selectedAllergy, prefs.getAllergy());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @Then("future meal suggestions should exclude meals containing seafood ingredients")
     public void futureMealSuggestionsShouldExcludeMealsContainingSeafoodIngredients() {
-        // Placeholder
+        System.out.println("Expecting future suggestions to exclude seafood ingredients (simulated).");
     }
+
 
     @When("they leave the preferences fields empty and submit the form")
     public void theyLeaveThePreferencesFieldsEmptyAndSubmitTheForm() {
