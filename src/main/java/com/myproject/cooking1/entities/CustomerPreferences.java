@@ -16,4 +16,10 @@ public class CustomerPreferences {
     public String getAllergy() {
         return allergy;
     }
+
+    @Override
+    public String toString() {
+        return "Dietary Preference: " + dietaryPreference + "\nAllergy: " + allergy;
+    }
+
 }
