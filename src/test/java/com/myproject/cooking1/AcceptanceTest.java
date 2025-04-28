@@ -5,7 +5,8 @@ import io.cucumber.junit.CucumberOptions.SnippetType;
 import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
-@CucumberOptions(features = "MyFeatures", monochrome= true,
-        snippets = SnippetType.CAMELCASE, glue = {"com.myproject.cooking1"})
+@CucumberOptions(features = {"C:\\Users\\PAL WEB\\Desktop\\software\\Cooking System\\MyFeatures"},
+        monochrome= true, snippets = SnippetType.CAMELCASE, glue = {"com.myproject.cooking1"})
+
 public class AcceptanceTest {
 }
