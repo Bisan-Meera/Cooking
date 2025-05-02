@@ -1,5 +1,6 @@
 package com.myproject.cooking1;
 
+import com.myproject.cooking1.entities.AdminService;
 import com.myproject.cooking1.entities.OrderService;
 import io.cucumber.java.en.*;
 import static org.junit.Assert.*;
@@ -11,6 +12,8 @@ import java.util.*;
 public class OrderHistoryAccess {
 
     OrderService orderService = new OrderService();
+    AdminService adminService = new AdminService();
+
     List<Map<String, String>> customerOrders;
     Map<Integer, List<String>> allCustomerOrders;
 
@@ -90,9 +93,10 @@ public class OrderHistoryAccess {
     }
 
     @When("she accesses the system order analytics dashboard")
-    public void sheAccessesTheSystemOrderAnalyticsDashboard() {
-        allCustomerOrders = orderService.getAllCustomerOrders();
+    public void sheAccessesTheSystemOrderAnalyticsDashboard() throws SQLException {
+        allCustomerOrders = adminService.getAllCustomerOrders();
     }
+
 
     @Then("she should be able to retrieve all orders placed by all customers")
     public void sheShouldBeAbleToRetrieveAllOrdersPlacedByAllCustomers() {
