@@ -10,8 +10,16 @@ public class TestContext {
         context.put(key, value);
     }
 
-    public static <T> T get(String key, @org.jetbrains.annotations.NotNull Class<T> type) {
-        return type.cast(context.get(key));
+    @SuppressWarnings("unchecked")
+    public static <T> T get(String key, Class<T> type) {
+        Object value = context.get(key);
+        if (value == null) {
+            throw new IllegalStateException("No value set in TestContext for key: " + key);
+        }
+        if (!type.isInstance(value)) {
+            throw new ClassCastException("Value for key '" + key + "' is not of type " + type.getName());
+        }
+        return (T) value;
     }
 
     public static void clear() {
