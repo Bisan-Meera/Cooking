@@ -86,6 +86,27 @@ public class User {
         return null;
     }
 
+    public static User getUserById(int userId, Connection conn) throws SQLException {
+        String sql = "SELECT * FROM Users WHERE user_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new User(
+                            rs.getInt("user_id"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            rs.getString("role")
+                    );
+                }
+            }
+        }
+        return null;
+    }
+
+
+
     public static boolean updateUser(User user, Connection conn, int updateType) throws SQLException {
         String sql;
         switch (updateType) {
