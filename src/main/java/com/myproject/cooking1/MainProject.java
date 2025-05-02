@@ -32,7 +32,7 @@ public class MainProject {
                             launchChefPage(scanner);
                             break;
                         case "admin":
-                            System.out.println("Admin page coming soon...");
+                            launchAdminPage(scanner);
                             break;
                         default:
                             System.out.println("Unknown role.");
@@ -112,12 +112,14 @@ public class MainProject {
 
     private static void launchChefPage(Scanner scanner) throws SQLException {
         OrderService orderService = new OrderService();
+        CustomerProfileService profileService = new CustomerProfileService();
         boolean running = true;
 
         while (running) {
             System.out.println("\n--- Chef Page ---");
             System.out.println("1. View Customer Order History");
-            System.out.println("2. Exit");
+            System.out.println("2. View Customer Preferences & Allergies");
+            System.out.println("3. Exit");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -126,25 +128,98 @@ public class MainProject {
                 case "1":
                     System.out.print("Enter customer user ID: ");
                     int customerId = Integer.parseInt(scanner.nextLine().trim());
-                    List<Map<String, String>> orders = orderService.getCustomerOrderHistory(customerId);
-                    if (orders.isEmpty()) {
-                        System.out.println("No orders found for this customer.");
-                    } else {
-                        System.out.println("Customer's past orders:");
-                        for (Map<String, String> order : orders) {
-                            System.out.println("- " + order.get("name") +
-                                    " | Price: $" + order.get("price") +
-                                    " | Description: " + order.get("description"));
+
+                    try (Connection conn = DBConnection.getConnection()) {
+                        User targetUser = User.getUserById(customerId, conn);
+                        if (targetUser == null || !targetUser.getRole().equals("customer")) {
+                            System.out.println("No customer found with this ID.");
+                        } else {
+                            List<Map<String, String>> orders = orderService.getCustomerOrderHistory(customerId);
+                            if (orders.isEmpty()) {
+                                System.out.println("No orders found for this customer.");
+                            } else {
+                                System.out.println("Customer's past orders:");
+                                for (Map<String, String> order : orders) {
+                                    System.out.println("- " + order.get("name") +
+                                            " | Price: $" + order.get("price") +
+                                            " | Description: " + order.get("description"));
+                                }
+                            }
                         }
+                    } catch (Exception e) {
+                        System.out.println("Error fetching customer order history.");
+                        e.printStackTrace();
                     }
                     break;
+
                 case "2":
+                    System.out.print("Enter customer user ID: ");
+                    int customerIdForPrefs = Integer.parseInt(scanner.nextLine().trim());
+
+                    try {
+                        CustomerPreferences prefs = profileService.viewPreferences(customerIdForPrefs);
+                        if (prefs != null) {
+                            System.out.println("Customer Preferences:");
+                            System.out.println("Dietary Preference: " + prefs.getDietaryPreference());
+                            System.out.println("Allergy: " + prefs.getAllergy());
+                        } else {
+                            System.out.println("No preferences found for this customer.");
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Error retrieving preferences.");
+                        e.printStackTrace();
+                    }
+                    break;
+
+                case "3":
                     running = false;
                     System.out.println("Logging out of chef page.");
                     break;
+
                 default:
                     System.out.println("Invalid option. Try again.");
             }
         }
     }
+    private static void launchAdminPage(Scanner scanner) throws SQLException {
+        AdminService adminService = new AdminService();
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\n--- Admin Page ---");
+            System.out.println("1. View All Customer Orders");
+            System.out.println("2. Exit");
+            System.out.print("Choose an option: ");
+
+            String input = scanner.nextLine().trim();
+
+            switch (input) {
+                case "1":
+                    Map<Integer, List<String>> allOrders = adminService.getAllCustomerOrders();
+                    if (allOrders.isEmpty()) {
+                        System.out.println("No customer orders found.");
+                    } else {
+                        System.out.println("All Customer Orders:");
+                        allOrders.forEach((id, meals) -> {
+                            System.out.println("Customer ID " + id + ":");
+                            for (String meal : meals) {
+                                System.out.println("  - " + meal);
+                            }
+                        });
+                    }
+                    break;
+
+                case "2":
+                    running = false;
+                    System.out.println("Logging out of admin page.");
+                    break;
+
+                default:
+                    System.out.println("Invalid option. Try again.");
+            }
+        }
+    }
+
+
+
 }
