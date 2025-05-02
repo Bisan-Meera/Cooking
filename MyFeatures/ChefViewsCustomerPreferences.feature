@@ -18,4 +18,5 @@ Feature: Chef views customer dietary preferences
   Scenario: Chef handles order with no preferences
     Given a customer has placed an order without saving any preferences
     When the chef opens the order details
-    Then the system should show "No preferences specified"
+    Then the chef should see the message "No preferences specified"
+
