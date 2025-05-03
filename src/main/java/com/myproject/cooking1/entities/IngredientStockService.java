@@ -3,15 +3,13 @@ package com.myproject.cooking1.entities;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-
+import com.myproject.cooking1.DBConnection;
 public class IngredientStockService {
 
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/yourdb", "youruser", "yourpass");
-    }
+
 
     public void deductIngredientsForOrder(int orderId) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             String query = "SELECT mi.ingredient_id, SUM(mi.quantity * oi.quantity) AS total_required " +
                     "FROM order_items oi " +
                     "JOIN meal_ingredients mi ON oi.meal_id = mi.meal_id " +
@@ -38,7 +36,7 @@ public class IngredientStockService {
 
     public List<String> getLowStockIngredients() {
         List<String> lowStock = new ArrayList<>();
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             String query = "SELECT name FROM ingredients WHERE stock_quantity <= threshold";
             ResultSet rs = conn.createStatement().executeQuery(query);
 
@@ -52,7 +50,7 @@ public class IngredientStockService {
     }
 
     public void updateIngredientStock(int ingredientId, double newQty) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "UPDATE ingredients SET stock_quantity = ?, last_updated = CURRENT_TIMESTAMP WHERE ingredient_id = ?");
             ps.setDouble(1, newQty);
@@ -64,7 +62,7 @@ public class IngredientStockService {
     }
 
     public boolean isIngredientBelowThreshold(int ingredientId) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "SELECT stock_quantity, threshold FROM ingredients WHERE ingredient_id = ?");
             ps.setInt(1, ingredientId);
@@ -79,7 +77,7 @@ public class IngredientStockService {
     }
 
     public String getIngredientName(int ingredientId) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("SELECT name FROM ingredients WHERE ingredient_id = ?");
             ps.setInt(1, ingredientId);
             ResultSet rs = ps.executeQuery();

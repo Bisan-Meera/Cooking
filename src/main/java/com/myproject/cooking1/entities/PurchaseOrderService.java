@@ -8,15 +8,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
+import com.myproject.cooking1.DBConnection;
 public class PurchaseOrderService {
 
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/yourdb", "youruser", "yourpass");
-    }
+
 
     public void createAutoPurchaseOrders() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             String check = "SELECT i.ingredient_id, i.name, si.supplier_id, si.price_per_unit " +
                     "FROM ingredients i " +
                     "JOIN supplier_ingredients si ON i.ingredient_id = si.ingredient_id " +
@@ -46,7 +44,7 @@ public class PurchaseOrderService {
     }
 
     public void approveAllPendingOrders() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             int updated = conn.createStatement().executeUpdate("UPDATE purchase_orders SET status = 'Approved' WHERE status = 'Pending'");
             System.out.println(updated + " pending orders approved.");
         } catch (SQLException e) {
@@ -55,7 +53,7 @@ public class PurchaseOrderService {
     }
 
     public void createManualOrder(int ingredientId, double quantity) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "SELECT supplier_id, price_per_unit FROM supplier_ingredients WHERE ingredient_id = ? LIMIT 1");
             ps.setInt(1, ingredientId);
@@ -82,7 +80,7 @@ public class PurchaseOrderService {
 
     public List<String> listPendingOrders() {
         List<String> orders = new ArrayList<>();
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             ResultSet rs = conn.createStatement().executeQuery(
                     "SELECT po.purchase_order_id, i.name AS ingredient, s.name AS supplier, po.quantity, po.price " +
                             "FROM purchase_orders po " +
