@@ -3,7 +3,7 @@ package com.myproject.cooking1;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
+import com.myproject.cooking1.DBConnection;
 import java.sql.*;
 
 public class Ingredient_stock_management {
@@ -13,9 +13,7 @@ public class Ingredient_stock_management {
     private int ingredientId;
     private double newQuantity = 100.0;
 
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/yourdb", "youruser", "yourpass");
-    }
+
 
     @Given("the system tracks ingredient stock levels in the {string} table")
     public void theSystemTracksIngredientStockLevelsInTheTable(String table) {
@@ -54,7 +52,7 @@ public class Ingredient_stock_management {
 
     @Then("the system deducts the required quantity of each ingredient from the {string}")
     public void theSystemDeductsTheRequiredQuantityOfEachIngredientFromThe(String tableName) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             String query = "SELECT mi.ingredient_id, SUM(mi.quantity * oi.quantity) AS total_required " +
                     "FROM order_items oi " +
                     "JOIN meal_ingredients mi ON oi.meal_id = mi.meal_id " +
@@ -97,7 +95,7 @@ public class Ingredient_stock_management {
 
     @Then("the system creates a restocking notification for the kitchen manager")
     public void theSystemCreatesARestockingNotificationForTheKitchenManager() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             String query = "SELECT ingredient_id, name, stock_quantity, threshold FROM ingredients WHERE stock_quantity <= threshold";
             ResultSet rs = conn.createStatement().executeQuery(query);
 
@@ -140,7 +138,7 @@ public class Ingredient_stock_management {
 
     @Then("they should see all unread restocking notifications")
     public void theyShouldSeeAllUnreadRestockingNotifications() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("SELECT content FROM notifications WHERE user_id = ? AND is_read = false");
             ps.setInt(1, kitchenManagerId);
             ResultSet rs = ps.executeQuery();
@@ -165,7 +163,7 @@ public class Ingredient_stock_management {
 
     @Then("the notification's {string} status is updated to true")
     public void theNotificationSStatusIsUpdatedToTrue(String field) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("UPDATE notifications SET is_read = true WHERE user_id = ? AND is_read = false");
             ps.setInt(1, kitchenManagerId);
             ps.executeUpdate();
@@ -186,7 +184,7 @@ public class Ingredient_stock_management {
 
     @Then("the {string} table reflects the new quantity")
     public void theTableReflectsTheNewQuantity(String tableName) {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("UPDATE ingredients SET stock_quantity = ?, last_updated = CURRENT_TIMESTAMP WHERE ingredient_id = ?");
             ps.setDouble(1, newQuantity);
             ps.setInt(2, ingredientId);
@@ -203,7 +201,7 @@ public class Ingredient_stock_management {
 
     @Then("previous low-stock notifications for that ingredient may be marked as resolved")
     public void previousLowStockNotificationsForThatIngredientMayBeMarkedAsResolved() {
-        try (Connection conn = getConnection()) {
+        try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement("UPDATE notifications SET is_read = true WHERE content LIKE ? AND user_id = ?");
             ps.setString(1, "%" + ingredientId + "%");
             ps.setInt(2, kitchenManagerId);
