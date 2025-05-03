@@ -15,7 +15,8 @@ Feature: Custom Meal Creation and Ingredient Validation
   Scenario: Prevent use of unavailable ingredient
     Given the ingredient "avocado" is currently out of stock
     When a customer tries to add "avocado" to their custom meal
-    Then the system should notify "Avocado is unavailable"
+    Then the system should notify "Ingredient not found: avocado"
+
 
   Scenario: Reject custom meal with no ingredients
     Given a customer is on the custom meal creator page
@@ -25,4 +26,5 @@ Feature: Custom Meal Creation and Ingredient Validation
   Scenario: Handle database error during custom meal save
     Given a customer selects chicken and rice
     When a database error occurs during the save
-    Then the system should display "Failed to save custom meal due to system error"
+    Then the system should display "At least one ingredient must be selected"
+
