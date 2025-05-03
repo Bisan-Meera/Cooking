@@ -34,6 +34,9 @@ public class MainProject {
                         case "admin":
                             launchAdminPage(scanner);
                             break;
+                        case "kitchen_staff":
+                            launchKitchenManagerPage(scanner, user);
+                            break;
                         default:
                             System.out.println("Unknown role.");
                     }
@@ -41,6 +44,70 @@ public class MainProject {
             } catch (Exception e) {
                 System.out.println("Login failed due to system error.");
                 e.printStackTrace();
+            }
+        }
+    }
+    private static void launchKitchenManagerPage(Scanner scanner, User user) throws SQLException {
+        IngredientStockService stockService = new IngredientStockService();
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\n--- Kitchen Manager Page ---");
+            System.out.println("Welcome, " + user.getName() + "!");
+            System.out.println("1. View Low Stock Ingredients");
+            System.out.println("2. Update Stock Manually");
+            System.out.println("3. Trigger Restocking Suggestions");
+            System.out.println("4. Manage Purchase Orders");
+            System.out.println("5. Logout");
+            System.out.print("Choose an option: ");
+
+            String input = scanner.nextLine().trim();
+
+            switch (input) {
+                case "1":
+                    List<String> lowStock = stockService.getLowStockIngredients();
+                    if (lowStock.isEmpty()) {
+                        System.out.println("All ingredients are above threshold.");
+                    } else {
+                        System.out.println("Low stock ingredients:");
+                        lowStock.forEach(name -> System.out.println(" - " + name));
+                    }
+                    break;
+
+                case "2":
+                    System.out.print("Enter Ingredient ID to update: ");
+                    int ingId = Integer.parseInt(scanner.nextLine().trim());
+                    System.out.print("Enter new quantity: ");
+                    double qty = Double.parseDouble(scanner.nextLine().trim());
+                    stockService.updateIngredientStock(ingId, qty);
+                    System.out.println("Stock updated for ingredient ID " + ingId);
+                    break;
+
+                case "3":
+                    List<String> toRestock = stockService.getLowStockIngredients();
+                    if (toRestock.isEmpty()) {
+                        System.out.println("No restocking needed.");
+                    } else {
+                        NotificationService notifier = new NotificationService();
+                        for (String name : toRestock) {
+                            String content = "Restock suggestion for " + name;
+                            notifier.createNotification(user.getUserId(), content);
+                        }
+                        System.out.println("Restocking suggestions sent.");
+                    }
+                    break;
+                case "4":
+                    PurchaseOrderService poService = new PurchaseOrderService();
+                    poService.openOrderSubMenu(scanner);
+                    break;
+
+                case "5":
+                    running = false;
+                    System.out.println("Logging out. Goodbye, " + user.getName() + "!");
+                    break;
+
+                default:
+                    System.out.println("Invalid option. Try again.");
             }
         }
     }
