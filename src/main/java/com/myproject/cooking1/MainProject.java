@@ -56,7 +56,7 @@ public class MainProject {
             System.out.println("1. View Preferences & Allergies");
             System.out.println("2. Update Preferences & Allergies");
             System.out.println("3. View Past Orders");
-            System.out.println("4. Create Custom Meal (Coming Soon)");
+            System.out.println("4. Create Custom Meal");
             System.out.println("5. Get AI Recipe Recommendation (Coming Soon)");
             System.out.println("6. Make an order (Coming Soon)");
             System.out.println("7. Exit");
@@ -96,6 +96,24 @@ public class MainProject {
                     }
                     break;
                 case "4":
+                    List<String> ingredients = new ArrayList<>();
+                    System.out.println("Enter ingredients for your custom meal (type 'done' to finish):");
+                    while (true) {
+                        String ing = scanner.nextLine().trim();
+                        if (ing.equalsIgnoreCase("done")) break;
+                        ingredients.add(ing);
+                    }
+                    try {
+                        boolean result = CustomOrderService.submitCustomMeal(user.getUserId(), ingredients);
+                        if (result) {
+                            System.out.println("Custom meal created successfully!");
+                        } else {
+                            System.out.println("Failed to create custom meal.");
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                    break;
                 case "5":
                 case "6":
                     System.out.println("Feature coming soon...");
@@ -181,6 +199,7 @@ public class MainProject {
             }
         }
     }
+
     private static void launchAdminPage(Scanner scanner) throws SQLException {
         AdminService adminService = new AdminService();
         boolean running = true;
@@ -219,7 +238,5 @@ public class MainProject {
             }
         }
     }
-
-
 
 }
