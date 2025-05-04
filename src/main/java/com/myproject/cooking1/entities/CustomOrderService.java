@@ -47,6 +47,14 @@ public class CustomOrderService {
 
             int customOrderId = orderRs.getInt("custom_order_id");
 
+            //  Insert corresponding unassigned cooking task
+            PreparedStatement insertTask = conn.prepareStatement(
+                    "INSERT INTO Tasks (custom_order_id, task_type, status) VALUES (?, 'cooking', 'active')"
+            );
+            insertTask.setInt(1, customOrderId);
+            insertTask.executeUpdate();
+
+
             // Deduct stock and save ingredients
             for (String name : ingredients) {
                 PreparedStatement getId = conn.prepareStatement("SELECT ingredient_id FROM Ingredients WHERE name ILIKE ?");
@@ -85,4 +93,7 @@ public class CustomOrderService {
     private static String capitalize(String s) {
         return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
+
+
+
 }
