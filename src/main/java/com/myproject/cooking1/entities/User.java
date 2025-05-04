@@ -12,6 +12,7 @@ public class User {
     private String email;
     private String password;
     private String role;
+    private String expertise;
 
     public static final int UPDATE_NAME = 1;
     public static final int UPDATE_EMAIL = 2;
@@ -19,12 +20,13 @@ public class User {
     public static final int UPDATE_ROLE = 4;
     public static final int DELETE_USER = 5;
 
-    public User(int userId, String name, String email, String password, String role) {
+    public User(int userId, String name, String email, String password, String role, String expertise) {
         this.userId = userId;
         this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
+        this.expertise = expertise;
     }
 
     public int getUserId() { return userId; }
@@ -78,7 +80,8 @@ public class User {
                             rs.getString("name"),
                             rs.getString("email"),
                             rs.getString("password"),
-                            rs.getString("role")
+                            rs.getString("role"),
+                            rs.getString("expertise")
                     );
                 }
             }
@@ -97,7 +100,8 @@ public class User {
                             rs.getString("name"),
                             rs.getString("email"),
                             rs.getString("password"),
-                            rs.getString("role")
+                            rs.getString("role"),
+                            rs.getString("expertise")
                     );
                 }
             }
@@ -151,5 +155,13 @@ public class User {
             stmt.setInt(1, userId);
             return stmt.executeUpdate() > 0;
         }
+    }
+
+    public String getExpertise() {
+        return expertise;
+    }
+
+    public void setExpertise(String expertise) {
+        this.expertise = expertise;
     }
 }
