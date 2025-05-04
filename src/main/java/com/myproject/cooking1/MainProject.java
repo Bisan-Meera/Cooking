@@ -58,7 +58,8 @@ public class MainProject {
             System.out.println("2. Update Stock Manually");
             System.out.println("3. Trigger Restocking Suggestions");
             System.out.println("4. Manage Purchase Orders");
-            System.out.println("5. Logout");
+            System.out.println("5. Manually Assign Tasks to Chefs");
+            System.out.println("6. Logout");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -101,10 +102,42 @@ public class MainProject {
                     poService.openOrderSubMenu(scanner);
                     break;
 
+
                 case "5":
+                    // Show pending tasks with their meal/custom details
+                    TaskAssignmentService.showPendingTasksWithDetails();
+
+                    // Show available chefs with expertise and workload
+                    List<User> chefs = TaskAssignmentService.getAllChefsWithWorkloadAndExpertise();
+                    System.out.println("\nAvailable Chefs:");
+                    for (User chef : chefs) {
+                        System.out.println("ID: " + chef.getUserId() + ", Name: " + chef.getName() +
+                                ", Expertise: " + chef.getExpertise() +
+                                ", Active Tasks: " + TaskAssignmentService.getTaskCount(chef.getUserId()));
+                    }
+
+                    System.out.print("\nEnter Task ID to assign: ");
+                    int taskId = Integer.parseInt(scanner.nextLine().trim());
+
+                    System.out.print("Enter Chef ID to assign to: ");
+                    int chefId = Integer.parseInt(scanner.nextLine().trim());
+
+                    boolean success = TaskAssignmentService.assignTaskToChef(taskId, chefId);
+                    if (success) {
+                        NotificationService notifier = new NotificationService();
+                        notifier.createNotification(chefId, "You have been assigned Task ID " + taskId);
+                        System.out.println("✅ Task " + taskId + " assigned to Chef ID " + chefId);
+                    } else {
+                        System.out.println("❌ Failed to assign task. Check IDs.");
+                    }
+
+                    break;
+
+                case "6":
                     running = false;
                     System.out.println("Logging out. Goodbye, " + user.getName() + "!");
                     break;
+
 
                 default:
                     System.out.println("Invalid option. Try again.");
@@ -164,23 +197,72 @@ public class MainProject {
                     break;
                 case "4":
                     List<String> ingredients = new ArrayList<>();
+                    Map<String, String> finalIngredients = new LinkedHashMap<>();
                     System.out.println("Enter ingredients for your custom meal (type 'done' to finish):");
+
                     while (true) {
                         String ing = scanner.nextLine().trim();
                         if (ing.equalsIgnoreCase("done")) break;
-                        ingredients.add(ing);
+
+                        try {
+                            List<String> options = IngredientSubstitutionService.suggestSubstitutionOptions(user.getUserId(), ing);
+
+                            if (!options.isEmpty()) {
+                                System.out.println("⚠️ " + ing + " is restricted or unavailable.");
+                                System.out.println("✅ Valid substitutions: " + String.join(", ", options));
+
+                                for (int i = 0; i < options.size(); i++) {
+                                    System.out.println((i + 1) + ". " + options.get(i));
+                                }
+                                System.out.print("Choose a substitution number, or type 'skip' to omit this ingredient: ");
+                                String choice = scanner.nextLine().trim();
+
+                                if (choice.equalsIgnoreCase("skip")) {
+                                    System.out.println("Ingredient skipped.");
+                                } else {
+                                    try {
+                                        int selected = Integer.parseInt(choice);
+                                        if (selected >= 1 && selected <= options.size()) {
+                                            finalIngredients.put(ing, options.get(selected - 1));
+                                        } else {
+                                            System.out.println("Invalid choice. Skipping ingredient.");
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        System.out.println("Invalid input. Skipping ingredient.");
+                                    }
+                                }
+
+                            } else {
+                                finalIngredients.put(ing, ing); // keep as is
+                            }
+
+                        } catch (Exception e) {
+                            System.out.println("❌ Error checking ingredient: " + ing + " - " + e.getMessage());
+                        }
                     }
+
+                    if (finalIngredients.isEmpty()) {
+                        System.out.println("No ingredients selected. Custom meal not created.");
+                        break;
+                    }
+
                     try {
-                        boolean result = CustomOrderService.submitCustomMeal(user.getUserId(), ingredients);
+                        boolean result = CustomOrderService.submitCustomMeal(user.getUserId(), new ArrayList<>(finalIngredients.values()));
                         if (result) {
-                            System.out.println("Custom meal created successfully!");
+                            System.out.println("✅ Custom meal created successfully!");
+                            for (Map.Entry<String, String> entry : finalIngredients.entrySet()) {
+                                if (!entry.getKey().equalsIgnoreCase(entry.getValue())) {
+                                    System.out.println("🔄 " + entry.getKey() + " was substituted with " + entry.getValue());
+                                }
+                            }
                         } else {
-                            System.out.println("Failed to create custom meal.");
+                            System.out.println("❌ Failed to create custom meal.");
                         }
                     } catch (Exception e) {
                         System.out.println("Error: " + e.getMessage());
                     }
                     break;
+
                 case "5":
                 case "6":
                     System.out.println("Feature coming soon...");
