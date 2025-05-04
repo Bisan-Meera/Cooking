@@ -22,6 +22,17 @@ public class TestContext {
         return (T) value;
     }
 
+    public static <T> T getOrDefault(String key, T defaultValue, Class<T> type) {
+        Object value = context.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        if (!type.isInstance(value)) {
+            throw new ClassCastException("Value for key '" + key + "' is not of type " + type.getName());
+        }
+        return (T) value;
+    }
+
     public static void clear() {
         context.clear();
     }
