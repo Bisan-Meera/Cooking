@@ -1,28 +1,31 @@
-Feature: Task Assignment Panel
-  Kitchen managers (kitchen staff) should be able to assign and manage cooking-related tasks for chefs and kitchen staff.
+Feature: Scheduling and Task Assignment
+
+  As a kitchen manager,
+  I want to assign tasks to chefs based on their workload and expertise,
+  So that I can ensure balanced workloads and efficient kitchen operations.
+
+  As a chef,
+  I want to receive notifications about my assigned cooking tasks,
+  So that I can prepare meals on time.
 
   Background:
-    Given the following users exist:
-      | user_id | name            | role           |
-      | 3       | Chef Yasser     | chef           |
-      | 4       | Fatima Ibrahim  | kitchen_staff  |
-    And the following orders exist:
-      | order_id | customer_id | status   |
-      | 101      | 1           | pending  |
+    Given the system has chefs with different workloads and expertise levels
+    And there are pending cooking tasks in the kitchen
 
-  Scenario: Assign task to chef
-    Given Fatima Ibrahim is logged in as kitchen manager
-    When she assigns task "Cook Pasta" to chef Yasser for order 101
-    Then the task should be saved in the system
-    And it should appear on Yasser’s dashboard
+  Scenario: Assign a task to the chef with the least workload
+    When the kitchen manager assigns a new cooking task
+    Then the task should be assigned to the chef with the least workload
 
-  Scenario: Mark task as completed
-    Given chef Yasser has a task "Cook Pasta" for order 101 with status "pending"
-    When he marks the task as completed
-    Then the task status should be updated to "Done"
-    And the update should be reflected on his task list
+  Scenario: Assign a task to a chef with matching expertise
+    Given a cooking task requires "Italian" cuisine expertise
+    When the kitchen manager assigns the task
+    Then the task should be assigned to a chef with "Italian" expertise
 
-  Scenario: View task list
-    Given a kitchen staff member is logged in
-    When they visit their tasks tab
-    Then all assigned tasks should be listed with status and order ID
+  Scenario: Notify chef upon task assignment
+    When a task is assigned to a chef
+    Then the chef should receive a notification about the task
+
+  Scenario: Prevent assigning multiple tasks to overworked chefs
+    Given Chef John already has 5 active tasks
+    When the kitchen manager tries to assign a new task
+    Then the task should be assigned to another available chef
