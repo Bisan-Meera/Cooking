@@ -27,4 +27,3 @@ Feature: Custom Meal Creation and Ingredient Validation
     Given a customer selects chicken and rice
     When a database error occurs during the save
     Then the system should display "At least one ingredient must be selected"
-
