@@ -9,7 +9,7 @@ public class NotificationService {
 
 
 
-    public  void createNotification(int userId, String content) {
+    public static void createNotification(int userId, String content) {
         try (Connection conn = DBConnection.getConnection()) {
             PreparedStatement ps = conn.prepareStatement(
                     "INSERT INTO notifications (user_id, content, is_read, created_at) VALUES (?, ?, false, CURRENT_TIMESTAMP)"
