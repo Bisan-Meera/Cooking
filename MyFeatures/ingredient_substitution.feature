@@ -18,6 +18,21 @@ Feature: Suggest Ingredient Substitutions Based on Dietary Restrictions or Unava
       | Tofu             |
       | Pita Bread       |
       | Chickpeas        |
+      | Rice noodles     |
+      | Cabbage          |
+      | Parsley          |
+      | Bread            |
+      | Garlic           |
+      | Tomato sauce     |
+      | Basmati rice     |
+      | Tomatoes         |
+      | Olive oil        |
+      | Bell peppers     |
+      | Onions           |
+      | Mozzarella       |
+      | Lasagna sheets   |
+      | Broccoli         |
+      | Rice             |
 
     And the substitution should be recorded for "Beef"
     And notify the chef to review the substitution
@@ -31,6 +46,22 @@ Feature: Suggest Ingredient Substitutions Based on Dietary Restrictions or Unava
       | Tofu             |
       | Pita Bread       |
       | Chickpeas        |
+      | Rice noodles     |
+      | Cabbage          |
+      | Parsley          |
+      | Bread            |
+      | Garlic           |
+      | Tomato sauce     |
+      | Basmati rice     |
+      | Tomatoes         |
+      | Olive oil        |
+      | Bell peppers     |
+      | Onions           |
+      | Mozzarella       |
+      | Lasagna sheets   |
+      | Broccoli         |
+      | Rice             |
+
 
     And the substitution should be recorded for "Salmon"
     And notify the chef to review the substitution
