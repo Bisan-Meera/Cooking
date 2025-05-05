@@ -29,7 +29,7 @@ public class MainProject {
                             launchCustomerPage(user, scanner);
                             break;
                         case "chef":
-                            launchChefPage(scanner);
+                            launchChefPage(user,scanner);
                             break;
                         case "admin":
                             launchAdminPage(scanner);
@@ -167,7 +167,8 @@ public class MainProject {
             System.out.println("4. Create Custom Meal");
             System.out.println("5. Get AI Recipe Recommendation (Coming Soon)");
             System.out.println("6. Make an order (Coming Soon)");
-            System.out.println("7. Exit");
+            System.out.println("7. View Notifications");
+            System.out.println("8. Exit");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -276,6 +277,19 @@ public class MainProject {
                     System.out.println("Feature coming soon...");
                     break;
                 case "7":
+                    List<String> customerNotes = NotificationService.getUnreadNotifications(user.getUserId());
+                    System.out.println("--- Unread Notifications ---");
+                    if (customerNotes.isEmpty()) {
+                        System.out.println("✅ No unread notifications.");
+                    } else {
+                        for (String note : customerNotes) {
+                            System.out.println("🔔 " + note);
+                        }
+                        NotificationService.markNotificationsAsRead(user.getUserId());
+                    }
+                    break;
+
+                case "8":
                     running = false;
                     System.out.println("Logging out. Goodbye, " + user.getName() + "!");
                     break;
@@ -285,7 +299,7 @@ public class MainProject {
         }
     }
 
-    private static void launchChefPage(Scanner scanner) throws SQLException {
+    private static void launchChefPage(User user,Scanner scanner) throws SQLException {
         OrderService orderService = new OrderService();
         CustomerProfileService profileService = new CustomerProfileService();
         boolean running = true;
@@ -294,7 +308,9 @@ public class MainProject {
             System.out.println("\n--- Chef Page ---");
             System.out.println("1. View Customer Order History");
             System.out.println("2. View Customer Preferences & Allergies");
-            System.out.println("3. Exit");
+            System.out.println("3. View Notifications");
+            System.out.println("4. Mark Task as Ready");
+            System.out.println("5. Exit");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -345,8 +361,38 @@ public class MainProject {
                         e.printStackTrace();
                     }
                     break;
-
                 case "3":
+                    List<String> chefNotes = NotificationService.getUnreadNotifications(user.getUserId()); // assuming chefId = 3
+                    System.out.println("--- Unread Notifications ---");
+                    if (chefNotes.isEmpty()) {
+                        System.out.println("✅ No unread notifications.");
+                    } else {
+                        for (String note : chefNotes) {
+                            System.out.println("🔔 " + note);
+                        }
+                        NotificationService.markNotificationsAsRead(user.getUserId()); // same assumption
+                    }
+                    break;
+                case "4":
+                    // Show active tasks for the current chef
+                    TaskAssignmentService.showActiveTasksForChef(user.getUserId());
+
+                    // Ask for task ID input
+                    System.out.print("Enter Task ID to mark as Ready: ");
+                    int taskId = Integer.parseInt(scanner.nextLine().trim());
+
+                    // Mark task as ready and notify customer
+                    boolean marked = TaskAssignmentService.markTaskAsReady(taskId);
+                    if (marked) {
+                        System.out.println("✅ Task marked as 'Ready' and customer notified.");
+                    } else {
+                        System.out.println("❌ Failed to mark task. Please check the ID.");
+                    }
+                    break;
+
+
+
+                case "5":
                     running = false;
                     System.out.println("Logging out of chef page.");
                     break;

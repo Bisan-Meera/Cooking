@@ -4,7 +4,9 @@ import com.myproject.cooking1.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TaskAssignmentService {
 
@@ -251,6 +253,77 @@ public class TaskAssignmentService {
             e.printStackTrace();
         }
         return false;
+    }
+    public static boolean markTaskAsReady(int taskId) {
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1. Update task status
+            PreparedStatement update = conn.prepareStatement(
+                    "UPDATE Tasks SET status = 'ready' WHERE task_id = ?"
+            );
+            update.setInt(1, taskId);
+            int updated = update.executeUpdate();
+
+            if (updated == 0) return false;
+
+            // 2. Fetch customer ID associated with this task
+            PreparedStatement query = conn.prepareStatement(
+                    "SELECT co.customer_id FROM Tasks t " +
+                            "JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id " +
+                            "WHERE t.task_id = ?"
+            );
+            query.setInt(1, taskId);
+            ResultSet rs = query.executeQuery();
+
+            if (rs.next()) {
+                int customerId = rs.getInt("customer_id");
+
+                // 3. Add order to customer's history - handled automatically if data is already in Orders
+
+                // 4. Send notification
+                String message = NotificationService.formatNotification("reminder", "Your meal is ready and will be delivered soon.");
+                NotificationService.createNotification(customerId, message);
+            }
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static void showActiveTasksForChef(int chefId) {
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = """
+           
+                           SELECT t.task_id,
+                                  CASE
+                                      WHEN co.notes IS NOT NULL THEN 'Custom: ' || co.notes
+                                      WHEN m.name IS NOT NULL THEN 'Meal: ' || m.name
+                                      ELSE 'General Task'
+                                  END AS description
+                           FROM Tasks t
+                           LEFT JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id
+                           LEFT JOIN Meals m ON t.meal_id = m.meal_id
+                           WHERE t.chef_id = ?
+                             AND t.status = 'active'
+                             AND t.task_type = 'cooking'
+                       
+                    
+        """;
+
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setInt(1, chefId);
+            ResultSet rs = stmt.executeQuery();
+
+            System.out.println("Active Tasks Assigned to You:");
+            while (rs.next()) {
+                int id = rs.getInt("task_id");
+                String desc = rs.getString("description");
+                System.out.println("Task ID: " + id + " | Description: " + desc);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 
