@@ -63,7 +63,9 @@ public class CustomOrderService {
 
                 if (!idRs.next()) throw new SQLException("Ingredient ID not found for: " + name);
                 int ingId = idRs.getInt("ingredient_id");
-
+               // double currentQty = idRs.getDouble("stock_quantity") - 0.10;
+                //double threshold = idRs.getDouble("threshold");
+               // String ingName = idRs.getString("name");
                 // Save ingredient usage
                 PreparedStatement insertUsage = conn.prepareStatement(
                         "INSERT INTO Customized_Order_Ingredients (custom_order_id, ingredient_id, quantity) VALUES (?, ?, ?)"
@@ -79,6 +81,7 @@ public class CustomOrderService {
                 );
                 deduct.setInt(1, ingId);
                 deduct.executeUpdate();
+
             }
 
             conn.commit();

@@ -3,7 +3,8 @@ package com.myproject.cooking1.entities;
 import java.sql.*;
 import java.util.Objects;
 import java.util.logging.Logger;
-
+import java.util.ArrayList;
+import java.util.List;
 import com.myproject.cooking1.DBConnection;
 
 public class User {
@@ -163,5 +164,19 @@ public class User {
 
     public void setExpertise(String expertise) {
         this.expertise = expertise;
+    }
+    public static List<Integer> getUserIdsByRole(String role) {
+        List<Integer> ids = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM Users WHERE role = ?");
+            ps.setString(1, role);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                ids.add(rs.getInt("user_id"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ids;
     }
 }

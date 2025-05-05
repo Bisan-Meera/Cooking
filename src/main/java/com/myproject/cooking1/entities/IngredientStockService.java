@@ -24,10 +24,27 @@ public class IngredientStockService {
                 double required = rs.getDouble("total_required");
 
                 PreparedStatement update = conn.prepareStatement(
-                        "UPDATE ingredients SET stock_quantity = stock_quantity - ?, last_updated = CURRENT_TIMESTAMP WHERE ingredient_id = ?");
+                        "UPDATE ingredients SET stock_quantity = stock_quantity - ?, last_updated = CURRENT_TIMESTAMP WHERE ingredient_id = ?"
+                );
                 update.setDouble(1, required);
                 update.setInt(2, ingredientId);
                 update.executeUpdate();
+
+                // 🚨 Check stock threshold after deduction and notify if needed
+                PreparedStatement check = conn.prepareStatement(
+                        "SELECT name, stock_quantity, threshold FROM ingredients WHERE ingredient_id = ?"
+                );
+                check.setInt(1, ingredientId);
+                ResultSet checkRs = check.executeQuery();
+                if (checkRs.next()) {
+                    double stock = checkRs.getDouble("stock_quantity");
+                    double threshold = checkRs.getDouble("threshold");
+                    String name = checkRs.getString("name");
+                    if (stock <= threshold) {
+                        String msg = NotificationService.formatNotification("restock", name + " is below threshold.");
+                        NotificationService.notifyAllByRole("kitchen_staff", msg);
+                    }
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

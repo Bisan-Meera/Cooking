@@ -59,7 +59,8 @@ public class MainProject {
             System.out.println("3. Trigger Restocking Suggestions");
             System.out.println("4. Manage Purchase Orders");
             System.out.println("5. Manually Assign Tasks to Chefs");
-            System.out.println("6. Logout");
+            System.out.println("6. View Notifications");
+            System.out.println("7. Logout");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -89,25 +90,21 @@ public class MainProject {
                     if (toRestock.isEmpty()) {
                         System.out.println("No restocking needed.");
                     } else {
-                        NotificationService notifier = new NotificationService();
                         for (String name : toRestock) {
-                            String content = "Restock suggestion for " + name;
-                            notifier.createNotification(user.getUserId(), content);
+                            String message = NotificationService.formatNotification("restock", name + " is below threshold.");
+                            NotificationService.notifyAllByRole("kitchen_staff", message);
                         }
-                        System.out.println("Restocking suggestions sent.");
+                        System.out.println("🔔 Restocking suggestions sent to kitchen staff.");
                     }
                     break;
+
                 case "4":
                     PurchaseOrderService poService = new PurchaseOrderService();
                     poService.openOrderSubMenu(scanner);
                     break;
 
-
                 case "5":
-                    // Show pending tasks with their meal/custom details
                     TaskAssignmentService.showPendingTasksWithDetails();
-
-                    // Show available chefs with expertise and workload
                     List<User> chefs = TaskAssignmentService.getAllChefsWithWorkloadAndExpertise();
                     System.out.println("\nAvailable Chefs:");
                     for (User chef : chefs) {
@@ -124,26 +121,37 @@ public class MainProject {
 
                     boolean success = TaskAssignmentService.assignTaskToChef(taskId, chefId);
                     if (success) {
-                        NotificationService notifier = new NotificationService();
-                        notifier.createNotification(chefId, "You have been assigned Task ID " + taskId);
+                        NotificationService.createNotification(chefId, "You have been assigned Task ID " + taskId);
                         System.out.println("✅ Task " + taskId + " assigned to Chef ID " + chefId);
                     } else {
                         System.out.println("❌ Failed to assign task. Check IDs.");
                     }
-
                     break;
 
                 case "6":
+                    List<String> notes = NotificationService.getUnreadNotifications(user.getUserId());
+                    System.out.println("--- Unread Notifications ---");
+                    if (notes.isEmpty()) {
+                        System.out.println("✅ No unread notifications.");
+                    } else {
+                        for (String note : notes) {
+                            System.out.println("🔔 " + note);
+                        }
+                        NotificationService.markNotificationsAsRead(user.getUserId());
+                    }
+                    break;
+
+                case "7":
                     running = false;
                     System.out.println("Logging out. Goodbye, " + user.getName() + "!");
                     break;
-
 
                 default:
                     System.out.println("Invalid option. Try again.");
             }
         }
     }
+
 
     private static void launchCustomerPage(User user, Scanner scanner) throws SQLException {
         CustomerProfileService profileService = new CustomerProfileService();

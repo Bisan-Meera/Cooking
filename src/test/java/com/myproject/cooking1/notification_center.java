@@ -20,9 +20,10 @@ public class notification_center {
     }
     @Then("a notification should be sent to all kitchen staff members")
     public void aNotificationShouldBeSentToAllKitchenStaffMembers() {
-        String content = "Stock alert: Ingredient is below threshold.";
-        notificationService.createNotification(kitchenStaffId, content);
+        String message = NotificationService.formatNotification("restock", "Ingredient is below threshold.");
+        NotificationService.notifyAllByRole("kitchen_staff", message);
     }
+
     @Given("a meal is prepared and packed")
     public void aMealIsPreparedAndPacked() {
         System.out.println("Meal prepared.");

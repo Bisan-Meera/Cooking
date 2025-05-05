@@ -1,13 +1,12 @@
+// ✅ NotificationService.java (updated with improvements)
 package com.myproject.cooking1.entities;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import com.myproject.cooking1.DBConnection;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
 public class NotificationService {
-
-
 
     public static void createNotification(int userId, String content) {
         try (Connection conn = DBConnection.getConnection()) {
@@ -21,4 +20,54 @@ public class NotificationService {
             e.printStackTrace();
         }
     }
+
+    public static void markNotificationsAsRead(int userId) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE notifications SET is_read = true WHERE user_id = ? AND is_read = false"
+            );
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void notifyAllByRole(String role, String message) {
+        List<Integer> users = User.getUserIdsByRole(role);
+        for (int id : users) {
+            createNotification(id, message);
+        }
+    }
+
+    public static List<String> getUnreadNotifications(int userId) {
+        List<String> notifications = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "SELECT content FROM notifications WHERE user_id = ? AND is_read = false"
+            );
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                notifications.add(rs.getString("content"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return notifications;
+    }
+
+
+
+
+    public static String formatNotification(String type, String detail) {
+        return switch (type) {
+            case "reminder" -> "Reminder: " + detail;
+            case "restock" -> "Stock Alert: " + detail;
+            case "task" -> "Task Reminder: " + detail;
+            default -> "Notice: " + detail;
+        };
+    }
 }
+
+
+
