@@ -111,6 +111,7 @@ public class IngredientSubstitutionService {
             insert.setString(4, original);
             insert.executeUpdate();
         }
+        NotificationService.notifyChefsOfSubstitution(original, substitute);
     }
 
     public static void createSubstitutionTask(int customOrderId, String original, String substitute, int customerId) {

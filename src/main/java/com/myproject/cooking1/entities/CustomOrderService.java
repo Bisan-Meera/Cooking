@@ -7,9 +7,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 public class CustomOrderService {
-    public static boolean submitCustomMeal(int userId, List<String> ingredients) {
+    public static boolean submitCustomMeal(int userId, List<String> ingredients, Map<String, String> substitutions) {
         if (ingredients == null || ingredients.isEmpty()) {
             throw new IllegalArgumentException("At least one ingredient must be selected");
         }
@@ -82,6 +83,16 @@ public class CustomOrderService {
                 deduct.setInt(1, ingId);
                 deduct.executeUpdate();
 
+            }
+            for (Map.Entry<String, String> entry : substitutions.entrySet()) {
+                String original = entry.getKey();
+                String substitute = entry.getValue();
+                IngredientSubstitutionService.recordSubstitution(customOrderId, original, substitute);
+            }
+
+            if (!substitutions.isEmpty()) {
+                String content = NotificationService.formatNotification("task", "Ingredient substitutions have been applied to custom order #" + customOrderId);
+                NotificationService.notifyAllByRole("chef", content);
             }
 
             conn.commit();

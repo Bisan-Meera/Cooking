@@ -67,6 +67,10 @@ public class NotificationService {
             default -> "Notice: " + detail;
         };
     }
+    public static void notifyChefsOfSubstitution(String original, String substitute) {
+        String message = formatNotification("substitution", "Substitution applied: " + original + " → " + substitute);
+        notifyAllByRole("chef", message);
+    }
 }
 
 

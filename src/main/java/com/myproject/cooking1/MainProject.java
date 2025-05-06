@@ -29,7 +29,7 @@ public class MainProject {
                             launchCustomerPage(user, scanner);
                             break;
                         case "chef":
-                            launchChefPage(scanner);
+                            launchChefPage(scanner,user);
                             break;
                         case "admin":
                             launchAdminPage(scanner);
@@ -59,7 +59,8 @@ public class MainProject {
             System.out.println("3. Trigger Restocking Suggestions");
             System.out.println("4. Manage Purchase Orders");
             System.out.println("5. Manually Assign Tasks to Chefs");
-            System.out.println("6. Logout");
+            System.out.println("6. View Ingredient Prices");
+            System.out.println("7. Logout");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -132,8 +133,11 @@ public class MainProject {
                     }
 
                     break;
-
                 case "6":
+                    PurchaseOrderService.showRealTimeIngredientPrices();
+                    break;
+
+                case "7":
                     running = false;
                     System.out.println("Logging out. Goodbye, " + user.getName() + "!");
                     break;
@@ -247,7 +251,7 @@ public class MainProject {
                     }
 
                     try {
-                        boolean result = CustomOrderService.submitCustomMeal(user.getUserId(), new ArrayList<>(finalIngredients.values()));
+                        boolean result = CustomOrderService.submitCustomMeal(user.getUserId(), new ArrayList<>(finalIngredients.values()), finalIngredients);
                         if (result) {
                             System.out.println("✅ Custom meal created successfully!");
                             for (Map.Entry<String, String> entry : finalIngredients.entrySet()) {
@@ -277,7 +281,7 @@ public class MainProject {
         }
     }
 
-    private static void launchChefPage(Scanner scanner) throws SQLException {
+    private static void launchChefPage(Scanner scanner,User user) throws SQLException {
         OrderService orderService = new OrderService();
         CustomerProfileService profileService = new CustomerProfileService();
         boolean running = true;
@@ -286,7 +290,8 @@ public class MainProject {
             System.out.println("\n--- Chef Page ---");
             System.out.println("1. View Customer Order History");
             System.out.println("2. View Customer Preferences & Allergies");
-            System.out.println("3. Exit");
+            System.out.println("3. Mark Task as Ready");
+            System.out.println("4. Exit");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -337,8 +342,23 @@ public class MainProject {
                         e.printStackTrace();
                     }
                     break;
-
                 case "3":
+                    System.out.println("🍳 Here are your active cooking tasks:\n");
+                    TaskAssignmentService.showActiveTasksForChef(user.getUserId());
+
+                    System.out.print("\nEnter Task ID to mark as Ready: ");
+                    int taskId = Integer.parseInt(scanner.nextLine().trim());
+
+                    boolean marked = TaskAssignmentService.markTaskAsReady(taskId);
+
+                    if (marked) {
+                        System.out.println("✅ Task marked as 'Ready' and customer notified.");
+                    } else {
+                        System.out.println("❌ Failed to mark task. Please check the ID.");
+                    }
+                    break;
+
+                case "4":
                     running = false;
                     System.out.println("Logging out of chef page.");
                     break;

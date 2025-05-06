@@ -146,6 +146,30 @@ public class PurchaseOrderService {
                 default:
                     System.out.println("Invalid option. Try again.");
             }
+
+        }
+    }
+    public static void showRealTimeIngredientPrices() {
+        try (Connection conn = DBConnection.getConnection()) {
+            String query = """
+                SELECT i.name AS ingredient, s.name AS supplier, si.price_per_unit, si.updated_at
+                FROM supplier_ingredients si
+                JOIN ingredients i ON si.ingredient_id = i.ingredient_id
+                JOIN suppliers s ON si.supplier_id = s.supplier_id
+            """;
+            ResultSet rs = conn.createStatement().executeQuery(query);
+            System.out.println("\n📦 Real-Time Ingredient Prices:");
+            while (rs.next()) {
+                System.out.printf("Ingredient: %s | Supplier: %s | Price: %.2f | Updated: %s\n",
+                        rs.getString("ingredient"),
+                        rs.getString("supplier"),
+                        rs.getDouble("price_per_unit"),
+                        rs.getTimestamp("updated_at"));
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error fetching supplier prices.");
+            e.printStackTrace();
         }
     }
 }
+

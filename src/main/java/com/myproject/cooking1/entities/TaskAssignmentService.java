@@ -294,37 +294,43 @@ public class TaskAssignmentService {
     public static void showActiveTasksForChef(int chefId) {
         try (Connection conn = DBConnection.getConnection()) {
             String query = """
-           
-                           SELECT t.task_id,
-                                  CASE
-                                      WHEN co.notes IS NOT NULL THEN 'Custom: ' || co.notes
-                                      WHEN m.name IS NOT NULL THEN 'Meal: ' || m.name
-                                      ELSE 'General Task'
-                                  END AS description
-                           FROM Tasks t
-                           LEFT JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id
-                           LEFT JOIN Meals m ON t.meal_id = m.meal_id
-                           WHERE t.chef_id = ?
-                             AND t.status = 'active'
-                             AND t.task_type = 'cooking'
-                       
-                    
-        """;
+                    SELECT t.task_id,
+                           CASE 
+                               WHEN co.notes IS NOT NULL THEN 'Custom: ' || co.notes
+                               WHEN m.name IS NOT NULL THEN 'Meal: ' || m.name
+                               ELSE 'General cooking task'
+                           END AS description
+                    FROM Tasks t
+                    LEFT JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id
+                    LEFT JOIN Orders o ON t.order_id = o.order_id
+                    LEFT JOIN Order_Items oi ON o.order_id = oi.order_id
+                    LEFT JOIN Meals m ON oi.meal_id = m.meal_id
+                    WHERE t.assigned_to = ?
+                      AND t.status = 'active'
+                      AND t.task_type = 'cooking'
+                    GROUP BY t.task_id, co.notes, m.name
+                    ORDER BY t.task_id
+                    """;
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, chefId);
+            ResultSet rs = ps.executeQuery();
 
-            PreparedStatement stmt = conn.prepareStatement(query);
-            stmt.setInt(1, chefId);
-            ResultSet rs = stmt.executeQuery();
-
-            System.out.println("Active Tasks Assigned to You:");
+            System.out.println("\n🔧 Your Active Tasks:");
+            boolean found = false;
             while (rs.next()) {
-                int id = rs.getInt("task_id");
+                int taskId = rs.getInt("task_id");
                 String desc = rs.getString("description");
-                System.out.println("Task ID: " + id + " | Description: " + desc);
+                System.out.println(" - Task ID: " + taskId + " | " + desc);
+                found = true;
+            }
+            if (!found) {
+                System.out.println("✅ No active cooking tasks assigned to you.");
             }
         } catch (SQLException e) {
+            System.out.println("❌ Error loading tasks.");
             e.printStackTrace();
         }
     }
-
-
 }
+
+
