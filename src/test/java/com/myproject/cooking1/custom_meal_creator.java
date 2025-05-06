@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -95,8 +96,8 @@ public class custom_meal_creator {
     public void theySubmitTheCustomMealRequest() {
         int userId = TestContext.get("userId", Integer.class);
         List<String> ingredients = TestContext.get("selectedIngredients", List.class);
-
-        boolean success = CustomOrderService.submitCustomMeal(userId, ingredients);
+        Map<String, String> substitutions = TestContext.getOrDefault("substitutions", new HashMap<>(), Map.class);
+        boolean success = CustomOrderService.submitCustomMeal(userId, ingredients,substitutions);
         TestContext.set("orderSuccess", success);
     }
 
@@ -154,9 +155,9 @@ public class custom_meal_creator {
     public void aCustomerTriesToAddToTheirCustomMeal(String ingredient) {
         int userId = TestContext.get("userId", Integer.class);
         List<String> ingredients = List.of(ingredient);
-
+        Map<String, String> substitutions = TestContext.getOrDefault("substitutions", new HashMap<>(),Map.class);
         try {
-            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients);
+            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients, substitutions);
             TestContext.set("orderSuccess", success);
             TestContext.set("lastMessage", null);
         } catch (Exception e) {
@@ -177,9 +178,10 @@ public class custom_meal_creator {
     public void theySubmitTheFormWithoutSelectingAnyIngredients() {
         int userId = TestContext.get("userId", Integer.class);
         List<String> ingredients = List.of();
+        Map<String, String> substitutions = new LinkedHashMap<>();
 
         try {
-            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients);
+            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients,substitutions);
             TestContext.set("orderSuccess", success);
             TestContext.set("lastMessage", null);
         } catch (Exception e) {
@@ -204,9 +206,10 @@ public class custom_meal_creator {
     public void aDatabaseErrorOccursDuringTheSave() {
         int userId = TestContext.get("userId", Integer.class);
         List<String> ingredients = TestContext.get("selectedIngredients", List.class);
+        Map<String, String> substitutions = TestContext.getOrDefault("substitutions", new HashMap<>(), Map.class);
 
         try {
-            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients);
+            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients,substitutions);
             TestContext.set("orderSuccess", success);
         } catch (Exception e) {
             TestContext.set("orderSuccess", false);

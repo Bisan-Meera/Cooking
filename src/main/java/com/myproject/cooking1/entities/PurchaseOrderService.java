@@ -170,6 +170,33 @@ public class PurchaseOrderService {
             System.out.println("❌ Error fetching supplier prices.");
             e.printStackTrace();
         }
+
     }
+
+    public static void updateSupplierPrice(int ingredientId, double newPrice) {
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1. Update the supplier_ingredients table with new price and current timestamp
+            PreparedStatement update = conn.prepareStatement(
+                    "UPDATE supplier_ingredients SET price_per_unit = ?, updated_at = CURRENT_TIMESTAMP WHERE ingredient_id = ?"
+            );
+            update.setDouble(1, newPrice);
+            update.setInt(2, ingredientId);
+            update.executeUpdate();
+
+            // 2. Update all pending purchase orders with the new price
+            PreparedStatement updateOrders = conn.prepareStatement(
+                    "UPDATE purchase_orders SET price = ? WHERE ingredient_id = ? AND status = 'Pending'"
+            );
+            updateOrders.setDouble(1, newPrice);
+            updateOrders.setInt(2, ingredientId);
+            updateOrders.executeUpdate();
+
+            System.out.println("✅ Updated supplier price and all pending purchase orders.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("❌ Failed to update supplier price");
+        }
+    }
+
 }
 

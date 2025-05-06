@@ -1,14 +1,13 @@
 package com.myproject.cooking1;
 
+import com.myproject.cooking1.entities.PurchaseOrderService;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import com.myproject.cooking1.DBConnection;
-import java.sql.*;
 
 public class real_time_pricing_and_ordering {
 
-
+    PurchaseOrderService service = new PurchaseOrderService();
 
     @Given("suppliers provide real-time pricing through the {string} table")
     public void suppliers_provide_real_time_pricing_through_the_table(String table) {
@@ -27,19 +26,7 @@ public class real_time_pricing_and_ordering {
 
     @Then("they should see a list of ingredients with their current real-time prices")
     public void they_should_see_a_list_of_ingredients_with_their_current_real_time_prices() {
-        try (Connection conn = DBConnection.getConnection()) {
-            String query = "SELECT i.name AS ingredient, s.name AS supplier, si.price_per_unit " +
-                    "FROM supplier_ingredients si " +
-                    "JOIN ingredients i ON i.ingredient_id = si.ingredient_id " +
-                    "JOIN suppliers s ON s.supplier_id = si.supplier_id";
-            ResultSet rs = conn.createStatement().executeQuery(query);
-            while (rs.next()) {
-                System.out.printf("Ingredient: %s | Supplier: %s | Price: %.2f\n",
-                        rs.getString("ingredient"), rs.getString("supplier"), rs.getDouble("price_per_unit"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        PurchaseOrderService.showRealTimeIngredientPrices();
     }
 
     @Then("each ingredient entry shows the supplier name, current price, and last updated timestamp")
@@ -64,33 +51,7 @@ public class real_time_pricing_and_ordering {
 
     @Then("the system should generate a new purchase order in the {string} table")
     public void the_system_should_generate_a_new_purchase_order_in_the_table(String table) {
-        try (Connection conn = DBConnection.getConnection()) {
-            String check = "SELECT i.ingredient_id, i.name, si.supplier_id, si.price_per_unit " +
-                    "FROM ingredients i " +
-                    "JOIN supplier_ingredients si ON i.ingredient_id = si.ingredient_id " +
-                    "WHERE i.stock_quantity <= i.threshold";
-            ResultSet rs = conn.createStatement().executeQuery(check);
-
-            while (rs.next()) {
-                int ingredientId = rs.getInt("ingredient_id");
-                int supplierId = rs.getInt("supplier_id");
-                double price = rs.getDouble("price_per_unit");
-                double quantityToReorder = 50.0; // example
-
-                PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO purchase_orders (ingredient_id, supplier_id, quantity, price, status, created_at) " +
-                                "VALUES (?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP)");
-                ps.setInt(1, ingredientId);
-                ps.setInt(2, supplierId);
-                ps.setDouble(3, quantityToReorder);
-                ps.setDouble(4, price);
-                ps.executeUpdate();
-
-                System.out.println("Purchase order created for ingredient ID: " + ingredientId);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        service.createAutoPurchaseOrders();
     }
 
     @Then("the purchase order should include the ingredient name, quantity to reorder, supplier name, and current price")
@@ -115,21 +76,7 @@ public class real_time_pricing_and_ordering {
 
     @Then("they should see a list of all pending purchase orders")
     public void they_should_see_a_list_of_all_pending_purchase_orders() {
-        try (Connection conn = DBConnection.getConnection()) {
-            ResultSet rs = conn.createStatement().executeQuery(
-                    "SELECT po.purchase_order_id, i.name AS ingredient, s.name AS supplier, po.quantity, po.price " +
-                            "FROM purchase_orders po " +
-                            "JOIN ingredients i ON po.ingredient_id = i.ingredient_id " +
-                            "JOIN suppliers s ON po.supplier_id = s.supplier_id " +
-                            "WHERE po.status = 'Pending'");
-            while (rs.next()) {
-                System.out.printf("Order ID: %d | Ingredient: %s | Supplier: %s | Qty: %.1f | Price: %.2f\n",
-                        rs.getInt("purchase_order_id"), rs.getString("ingredient"),
-                        rs.getString("supplier"), rs.getDouble("quantity"), rs.getDouble("price"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        service.listPendingOrders().forEach(System.out::println);
     }
 
     @Then("each purchase order displays ingredient details, supplier information, price, and quantity")
@@ -139,11 +86,7 @@ public class real_time_pricing_and_ordering {
 
     @When("the kitchen manager approves a purchase order")
     public void the_kitchen_manager_approves_a_purchase_order() {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.createStatement().executeUpdate("UPDATE purchase_orders SET status = 'Approved' WHERE status = 'Pending'");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        service.approveAllPendingOrders();
     }
 
     @Then("the status of the purchase order is updated to {string}")
@@ -156,9 +99,6 @@ public class real_time_pricing_and_ordering {
         System.out.println("Purchase order approved.");
     }
 
-    int ingredientId = 3;
-    double manualQty = 25.0;
-
     @Given("the kitchen manager needs to order an ingredient not automatically ordered")
     public void the_kitchen_manager_needs_to_order_an_ingredient_not_automatically_ordered() {
         System.out.println("Manual order request initiated.");
@@ -166,39 +106,17 @@ public class real_time_pricing_and_ordering {
 
     @When("they select the ingredient and specify the quantity")
     public void they_select_the_ingredient_and_specify_the_quantity() {
-        System.out.println("Ingredient ID: " + ingredientId + ", Qty: " + manualQty);
+        System.out.println("Ingredient selection confirmed.");
     }
 
     @When("they submit a manual purchase order request")
     public void they_submit_a_manual_purchase_order_request() {
-        System.out.println("Manual purchase order request submitted.");
+        service.createManualOrder(3, 25.0);
     }
 
     @Then("a new purchase order is created in the {string} table with status {string}")
     public void a_new_purchase_order_is_created_in_the_table_with_status(String table, String status) {
-        try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(
-                    "SELECT supplier_id, price_per_unit FROM supplier_ingredients WHERE ingredient_id = ? LIMIT 1");
-            ps.setInt(1, ingredientId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int supplierId = rs.getInt("supplier_id");
-                double price = rs.getDouble("price_per_unit");
-
-                PreparedStatement insert = conn.prepareStatement(
-                        "INSERT INTO purchase_orders (ingredient_id, supplier_id, quantity, price, status, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                insert.setInt(1, ingredientId);
-                insert.setInt(2, supplierId);
-                insert.setDouble(3, manualQty);
-                insert.setDouble(4, price);
-                insert.setString(5, status);
-                insert.executeUpdate();
-
-                System.out.println("Manual purchase order created.");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        System.out.println("Manual purchase order created.");
     }
 
     @Then("the supplier price is fetched in real-time at the moment of submission")
@@ -218,28 +136,11 @@ public class real_time_pricing_and_ordering {
 
     @Then("the supplier_prices table is updated with the latest price and timestamp")
     public void the_supplier_prices_table_is_updated_with_the_latest_price_and_timestamp() {
-        try (Connection conn = DBConnection.getConnection()) {
-            double newPrice = 4.25;
-            PreparedStatement ps = conn.prepareStatement("UPDATE supplier_ingredients SET price_per_unit = ?, updated_at = CURRENT_TIMESTAMP WHERE ingredient_id = ?");
-            ps.setDouble(1, newPrice);
-            ps.setInt(2, ingredientId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        PurchaseOrderService.updateSupplierPrice(3, 4.25);
     }
 
     @Then("any pending purchase orders for that ingredient are updated to reflect the new price")
     public void any_pending_purchase_orders_for_that_ingredient_are_updated_to_reflect_the_new_price() {
-        try (Connection conn = DBConnection.getConnection()) {
-            double newPrice = 4.25;
-            PreparedStatement ps = conn.prepareStatement("UPDATE purchase_orders SET price = ? WHERE ingredient_id = ? AND status = 'Pending'");
-            ps.setDouble(1, newPrice);
-            ps.setInt(2, ingredientId);
-            ps.executeUpdate();
-            System.out.println("Updated pending orders with new price.");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        System.out.println("Updated pending orders with new price.");
     }
 }
