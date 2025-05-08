@@ -1,25 +1,45 @@
-Feature: AI Recipe Recommendation
-  The system should recommend a suitable meal using AI logic based on dietary restrictions, available ingredients, and time constraints.
+Feature: AI-Powered Recipe Recommendations
+  The system should recommend suitable meals to users based on preferences, allergies, available ingredients, and prep time.
 
   Background:
-    Given the following meals exist:
-      | meal_id | name                | description                          | price |
-      | 1       | Spaghetti           | Pasta with tomato basil sauce        | 25.00 |
-      | 2       | Tomato Basil Soup   | Creamy tomato and basil soup         | 20.00 |
-      | 3       | Vegan Pesto Pasta   | Pasta with olive oil and garlic      | 23.00 |
-    And their ingredients are defined in the Meal_Ingredients table
-    And the ingredients include:
-      | ingredient_id | name         |
-      | 1             | Tomatoes     |
-      | 2             | Basil        |
-      | 3             | Pasta        |
-      | 4             | Olive Oil    |
-      | 5             | Garlic       |
+    Given the following customer preferences exist:
+      | user_id | dietary_preference | allergy        |
+      | 101     | Vegan              | Peanuts        |
+      | 102     | Vegetarian         | Gluten         |
+      | 103     | Halal              | None           |
 
-  Scenario: Recommend a vegan meal using available ingredients
-    Given a user with a "Vegan" dietary restriction
-    And the user has Tomatoes, Basil, and Pasta available
-    And they have 30 minutes to cook
-    When the system evaluates all meals from the Meals table
-    Then it should recommend "Spaghetti"
-    And explain: "Spaghetti includes only your available ingredients, meets your vegan preference, and takes less than 30 minutes."
+    And the meals have preparation times and mapped ingredients
+    And the stock levels for ingredients are up to date
+
+  Scenario: Recommend a vegan recipe under 30 minutes using tomatoes, basil, and pasta
+    Given user 101 wants a vegan recipe
+    And has 30 minutes available
+    And has the following ingredients:
+      | Tomatoes |
+      | Basil    |
+      | Pasta    |
+    When the AI assistant checks for suitable meals
+    Then the assistant should recommend "Vegan Pesto Pasta"
+    And explain it uses available ingredients, fits time, and meets dietary restrictions
+
+  Scenario: Recommend a vegetarian recipe for user with gluten allergy
+    Given user 102 wants a vegetarian recipe
+    And is allergic to gluten
+    And has the following ingredients:
+      | Tomatoes |
+      | Rice     |
+      | Cheese   |
+    When the AI assistant filters the meal database
+    Then the assistant should only show gluten-free vegetarian options
+    And exclude meals with ingredients like bread or lasagna sheets
+
+
+
+  Scenario: No valid meal found
+    Given user 101 wants a vegan recipe
+    And has only the following ingredients:
+      | Beef |
+      | Lamb |
+    When the AI assistant checks for suitable options
+    Then it should respond "No valid recipes found"
+    And suggest buying alternative vegan ingredients
