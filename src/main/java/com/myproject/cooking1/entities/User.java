@@ -58,16 +58,17 @@ public class User {
     }
 
     public static void createUser(User user, Connection conn) throws SQLException {
-        String sql = "INSERT INTO Users (user_id, name, email, password, role) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Users (name, email, password, role, expertise) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, user.getUserId());
-            stmt.setString(2, user.getName());
-            stmt.setString(3, user.getEmail());
-            stmt.setString(4, user.getPassword());
-            stmt.setString(5, user.getRole());
+            stmt.setString(1, user.getName());
+            stmt.setString(2, user.getEmail());
+            stmt.setString(3, user.getPassword());
+            stmt.setString(4, user.getRole());
+            stmt.setString(5, user.getExpertise());
             stmt.executeUpdate();
         }
     }
+
 
     public static User getUserByIdAndName(int userId, String name, Connection conn) throws SQLException {
         String sql = "SELECT * FROM Users WHERE user_id = ? AND name = ?";
