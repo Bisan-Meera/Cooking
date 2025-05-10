@@ -2,13 +2,44 @@ package com.myproject.cooking1;
 
 import com.myproject.cooking1.entities.*;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+
 
 public class MainProject {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\nWelcome to the Cooking Project System!");
+            System.out.println("1. Login");
+            System.out.println("2. Sign Up (Customers Only)");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    handleLogin(scanner);
+                    break;
+                case "2":
+                    handleSignup(scanner);
+                    break;
+                case "3":
+                    running = false;
+                    System.out.println("Exiting. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        }
+    }
+
+    private static void handleLogin(Scanner scanner) {
         User user = null;
 
         while (user == null) {
@@ -29,7 +60,7 @@ public class MainProject {
                             launchCustomerPage(user, scanner);
                             break;
                         case "chef":
-                            launchChefPage(scanner,user);
+                            launchChefPage(scanner, user);
                             break;
                         case "admin":
                             launchAdminPage(scanner);
@@ -44,7 +75,52 @@ public class MainProject {
             } catch (Exception e) {
                 System.out.println("Login failed due to system error.");
                 e.printStackTrace();
+                break;
             }
+        }
+    }
+
+    private static void handleSignup(Scanner scanner) {
+        System.out.println("\n--- Customer Sign Up ---");
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine().trim();
+
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine().trim();
+
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine().trim();
+
+        String role = "customer";
+
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement checkStmt = conn.prepareStatement("SELECT COUNT(*) FROM Users WHERE email = ?");
+            checkStmt.setString(1, email);
+            ResultSet rs = checkStmt.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                System.out.println("Email already in use. Please login instead.");
+                return;
+            }
+
+            PreparedStatement insertStmt = conn.prepareStatement(
+                    "INSERT INTO Users (name, email, password, role) VALUES (?, ?, ?, ?) RETURNING user_id");
+            insertStmt.setString(1, name);
+            insertStmt.setString(2, email);
+            insertStmt.setString(3, password);
+            insertStmt.setString(4, role);
+
+            ResultSet insertRs = insertStmt.executeQuery();
+            if (insertRs.next()) {
+                int newUserId = insertRs.getInt("user_id");
+                System.out.println("✅ Registration successful! Your User ID is: " + newUserId);
+                System.out.println("Please use it to log in next time.\n");
+            } else {
+                System.out.println("Registration failed. Try again later.");
+            }
+
+        } catch (Exception e) {
+            System.out.println("System error during sign up.");
+            e.printStackTrace();
         }
     }
     private static void launchKitchenManagerPage(Scanner scanner, User user) throws SQLException {
