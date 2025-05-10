@@ -1,13 +1,10 @@
 package com.myproject.cooking1;
 
 import com.myproject.cooking1.entities.TestContext;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import com.myproject.cooking1.entities.User;
+import io.cucumber.java.en.*;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,21 +48,13 @@ public class Login {
     @When("they enter valid credentials: user_id {int} and name {string}")
     public void theyEnterValidCredentialsUserIdAndName(Integer userId, String name) {
         try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT role FROM Users WHERE user_id = ? AND name = ?"
-            );
-            stmt.setInt(1, userId);
-            stmt.setString(2, name);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                String role = rs.getString("role");
-                loggedInUsers.add(userId);
-                TestContext.set("lastMessage", role + " Dashboard");
+            User user = User.getUserByIdAndName(userId, name, conn);
+            if (user != null) {
+                loggedInUsers.add(user.getUserId());
+                TestContext.set("lastMessage", user.getRole() + " Dashboard");
             } else {
                 TestContext.set("lastMessage", "Invalid user_id or name");
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             TestContext.set("lastMessage", "Login failed due to system error");
@@ -87,17 +76,10 @@ public class Login {
     @When("they enter user_id {int} and name {string}")
     public void theyEnterUserIdAndName(Integer userId, String name) {
         try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT * FROM Users WHERE user_id = ? AND name = ?"
-            );
-            stmt.setInt(1, userId);
-            stmt.setString(2, name);
-            ResultSet rs = stmt.executeQuery();
-
-            if (!rs.next()) {
+            User user = User.getUserByIdAndName(userId, name, conn);
+            if (user == null) {
                 TestContext.set("lastMessage", "Invalid user ID or name");
             }
-
         } catch (Exception e) {
             TestContext.set("lastMessage", "Login failed due to system error");
         }
@@ -113,19 +95,12 @@ public class Login {
     @When("they enter user_id {int} and invalid name {string}")
     public void theyEnterUserIdAndInvalidName(Integer userId, String name) {
         try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT * FROM Users WHERE user_id = ? AND name = ?"
-            );
-            stmt.setInt(1, userId);
-            stmt.setString(2, name);
-            ResultSet rs = stmt.executeQuery();
-
-            if (!rs.next()) {
+            User user = User.getUserByIdAndName(userId, name, conn);
+            if (user == null) {
                 TestContext.set("lastMessage", "Invalid user ID or name");
             } else {
                 TestContext.set("lastMessage", "Logged in successfully");
             }
-
         } catch (Exception e) {
             TestContext.set("lastMessage", "Database error occurred");
             e.printStackTrace();
@@ -171,5 +146,4 @@ public class Login {
             TestContext.set("lastMessage", "Login failed due to system error");
         }
     }
-
 }
