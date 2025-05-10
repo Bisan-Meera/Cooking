@@ -10,7 +10,7 @@ Feature: Accessing customer order history
     Then she should see "Vegetarian Lasagna" listed with price and description
 
   Scenario: Customer with no previous orders sees an empty message
-    Given the customer "Mohamed Said" with user_id 2 has no past orders
+    Given the customer "John Doe" with user_id 142 has no past orders
     When he logs in and goes to the order history page
     Then he should see a message saying "You have not placed any orders yet"
 
