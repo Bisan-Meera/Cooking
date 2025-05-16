@@ -5,11 +5,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBConnection {
-    private static final String URL = System.getenv("SUPABASE_DB_URL");
-    private static final String USER = System.getenv("SUPABASE_DB_USER");
-    private static final String PASSWORD = System.getenv("SUPABASE_DB_PASS");
+    private static final String URL = System.getenv("DB_URL");
+    private static final String USER = System.getenv("DB_USER");
+    private static final String PASSWORD = System.getenv("DB_PASS");
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }
+
