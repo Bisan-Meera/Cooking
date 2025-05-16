@@ -12,23 +12,9 @@ jobs:
     name: Build and analyze
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_DB: Cooking1
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: bisan2005
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -52,17 +38,14 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          until pg_isready -h localhost -p 5432; do
-            echo "Waiting for PostgreSQL to start...";
-            sleep 2;
-          done
-
-      - name: Build and analyze
+      - name: Build and analyze with Supabase
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DB_USER: ${{ secrets.SUPABASE_DB_USER }}
+          DB_PASS: ${{ secrets.SUPABASE_DB_PASS }}
         run: |
+          echo "🔗 Connecting to Supabase at $DB_URL..."
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=Bisan-Meera_Cooking \
             -Dsonar.organization=bisan-meera \
