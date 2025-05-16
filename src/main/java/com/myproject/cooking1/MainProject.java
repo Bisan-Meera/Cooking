@@ -452,7 +452,8 @@ public class MainProject {
         while (running) {
             System.out.println("\n--- Admin Page ---");
             System.out.println("1. View All Customer Orders");
-            System.out.println("2. Exit");
+            System.out.println("2. Generate Daily Revenue Report");
+            System.out.println("3. Exit");
             System.out.print("Choose an option: ");
 
             String input = scanner.nextLine().trim();
@@ -474,6 +475,10 @@ public class MainProject {
                     break;
 
                 case "2":
+                    InvoiceService.generateDailyRevenueReport();
+                    break;
+
+                case "3":
                     running = false;
                     System.out.println("Logging out of admin page.");
                     break;
@@ -483,5 +488,6 @@ public class MainProject {
             }
         }
     }
+
 
 }
