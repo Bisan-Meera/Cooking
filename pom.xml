@@ -66,4 +66,16 @@
 
 
     </dependencies>
+
+    <build>
+        <testResources>
+            <testResource>
+                <directory>MyFeatures</directory>
+                <includes>
+                    <include>**/*.feature</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
+
 </project>
