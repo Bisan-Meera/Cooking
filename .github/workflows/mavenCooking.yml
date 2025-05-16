@@ -11,6 +11,7 @@ jobs:
   build:
     name: Build and analyze
     runs-on: ubuntu-latest
+    environment: testSonar  # ✅ This line enables access to environment secrets like SONAR_TOKEN
 
     steps:
       - name: Checkout repository
