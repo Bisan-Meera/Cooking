@@ -26,7 +26,17 @@ public class signup {
     @Given("the email {string} is not already registered")
     public void theEmailIsNotAlreadyRegistered(String email) {
         usedEmails.remove(email.toLowerCase());
+
+        // 🧹 Delete from DB to ensure test starts clean
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("DELETE FROM Users WHERE email = ?");
+            stmt.setString(1, email);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
 
     @Given("the email {string} is already registered")
     public void theEmailIsAlreadyRegistered(String email) {
@@ -36,6 +46,8 @@ public class signup {
     @When("the user signs up with name {string}, email {string}, password {string}, role {string}, and expertise {string}")
     public void theUserSignsUpWithNameEmailPasswordRoleAndExpertise(String name, String email, String password, String role, String expertise) {
         TestContext.clear();
+        TestContext.set("email", email);
+
 
         if (usedEmails.contains(email.toLowerCase())) {
             lastMessage = "Email already in use";
@@ -91,7 +103,21 @@ public class signup {
     @Then("the system should create a new user and show {string}")
     public void theSystemShouldCreateANewUserAndShow(String expectedMessage) {
         assertEquals(expectedMessage, lastMessage);
+
+        // 🧹 If the registration was successful, delete the test user
+        if ("Registration successful".equals(lastMessage)) {
+            try (Connection conn = DBConnection.getConnection()) {
+                String email = TestContext.get("email", String.class);
+                PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM Users WHERE email = ?");
+                deleteStmt.setString(1, email);
+                deleteStmt.executeUpdate();
+                usedEmails.remove(email.toLowerCase()); // optional if needed
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
+
 
     @Then("the signup result should be {string}")
     public void theSignupResultShouldBe(String expectedMessage) {
