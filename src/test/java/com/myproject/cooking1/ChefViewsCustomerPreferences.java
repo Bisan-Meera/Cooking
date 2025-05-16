@@ -60,7 +60,7 @@ public class ChefViewsCustomerPreferences {
     @Given("multiple customers have placed orders")
     public void multipleCustomersHavePlacedOrders() {
         Map<Integer, CustomerPreferences> customerData = new HashMap<>();
-        customerData.put(101, new CustomerPreferences("Vegan", "Peanuts"));
+        customerData.put(101, new CustomerPreferences("Vegetarian", "No Nuts"));
         customerData.put(102, new CustomerPreferences("Vegetarian", "Gluten"));
         customerData.put(103, new CustomerPreferences("Halal", "None"));
 
