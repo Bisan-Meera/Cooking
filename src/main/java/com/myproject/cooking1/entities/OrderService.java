@@ -43,49 +43,107 @@ public class OrderService {
         try {
             conn.setAutoCommit(false);
 
-            // Insert into Orders
+            // ✅ STEP 1: Check ingredient stock for each meal
+            for (String meal : meals) {
+                PreparedStatement getMealIdStmt = conn.prepareStatement("SELECT meal_id FROM Meals WHERE name = ?");
+                getMealIdStmt.setString(1, meal);
+                ResultSet mealIdRs = getMealIdStmt.executeQuery();
+
+                if (!mealIdRs.next()) throw new SQLException("Meal not found: " + meal);
+                int mealId = mealIdRs.getInt("meal_id");
+
+                PreparedStatement ingStmt = conn.prepareStatement(
+                        "SELECT mi.ingredient_id, mi.quantity, i.stock_quantity, i.threshold " +
+                                "FROM meal_ingredients mi JOIN ingredients i ON mi.ingredient_id = i.ingredient_id " +
+                                "WHERE mi.meal_id = ?"
+                );
+                ingStmt.setInt(1, mealId);
+                ResultSet ingRs = ingStmt.executeQuery();
+
+                while (ingRs.next()) {
+                    double requiredQty = ingRs.getDouble("quantity");
+                    double stockQty = ingRs.getDouble("stock_quantity");
+                    double threshold = ingRs.getDouble("threshold");
+
+                    if (stockQty < requiredQty || stockQty <= threshold) {
+                        throw new RuntimeException("Cannot order '" + meal + "' due to low stock");
+
+
+                    }
+                }
+            }
+
+            // ✅ STEP 2: Insert into Orders
             PreparedStatement orderStmt = conn.prepareStatement(
                     "INSERT INTO Orders (customer_id, status, created_at) VALUES (?, ?, CURRENT_TIMESTAMP) RETURNING order_id"
             );
             orderStmt.setInt(1, customerId);
-            orderStmt.setString(2, "pending"); // or "submitted", "new", etc.
-
+            orderStmt.setString(2, "pending");
             ResultSet rs = orderStmt.executeQuery();
             rs.next();
             int orderId = rs.getInt("order_id");
 
-            // Link meals to order
+            // ✅ STEP 3: Link meals to order
             for (String meal : meals) {
                 PreparedStatement mealStmt = conn.prepareStatement(
                         "INSERT INTO Order_Items (order_id, meal_id, quantity) " +
                                 "SELECT ?, meal_id, ? FROM Meals WHERE name = ?"
                 );
                 mealStmt.setInt(1, orderId);
-                mealStmt.setInt(2, 1); // default quantity
+                mealStmt.setInt(2, 1);
                 mealStmt.setString(3, meal);
                 mealStmt.executeUpdate();
-
             }
 
-            // Insert one task per order
+            // ✅ STEP 4: Deduct stock
+            for (String meal : meals) {
+                PreparedStatement getMealIdStmt = conn.prepareStatement("SELECT meal_id FROM Meals WHERE name = ?");
+                getMealIdStmt.setString(1, meal);
+                ResultSet mealIdRs = getMealIdStmt.executeQuery();
+                mealIdRs.next();
+                int mealId = mealIdRs.getInt("meal_id");
+
+                PreparedStatement ingStmt = conn.prepareStatement(
+                        "SELECT ingredient_id, quantity FROM meal_ingredients WHERE meal_id = ?"
+                );
+                ingStmt.setInt(1, mealId);
+                ResultSet ingRs = ingStmt.executeQuery();
+
+                while (ingRs.next()) {
+                    int ingredientId = ingRs.getInt("ingredient_id");
+                    double usedQty = ingRs.getDouble("quantity");
+
+                    PreparedStatement updateStock = conn.prepareStatement(
+                            "UPDATE ingredients SET stock_quantity = stock_quantity - ? WHERE ingredient_id = ?"
+                    );
+                    updateStock.setDouble(1, usedQty);
+                    updateStock.setInt(2, ingredientId);
+                    updateStock.executeUpdate();
+                }
+            }
+
+            // ✅ STEP 5: Create task
             PreparedStatement taskStmt = conn.prepareStatement(
                     "INSERT INTO Tasks (order_id, task_type, status) VALUES (?, ?, ?)"
             );
             taskStmt.setInt(1, orderId);
-            taskStmt.setString(2, "order-prep"); // or any task type you define
+            taskStmt.setString(2, "order-prep");
             taskStmt.setString(3, "pending");
-            ;
             taskStmt.executeUpdate();
 
             conn.commit();
             return orderId;
+
         } catch (Exception e) {
-            conn.rollback();
-            throw new RuntimeException("Failed to create order", e);
-        } finally {
+        conn.rollback();
+        if (e instanceof RuntimeException) throw (RuntimeException) e; // forward the original error
+        throw new RuntimeException("Failed to create order", e);
+    }
+ finally {
             conn.close();
         }
     }
+
 
     public static List<String> getTasksByOrderId(int orderId) throws SQLException {
         List<String> tasks = new ArrayList<>();
