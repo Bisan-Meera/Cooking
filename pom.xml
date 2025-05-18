@@ -25,6 +25,11 @@
         <sonar.analysis.mode>publish</sonar.analysis.mode>
         <sonar.newCode.period>2024-01-01</sonar.newCode.period>
         <sonar.java.binaries>${project.build.outputDirectory}</sonar.java.binaries>
+        <sonar.coverage.exclusions>
+            **/com/myproject/cooking1/entities/DatabaseHelper.java,
+            **/com/myproject/cooking1/entities/TestContext.java,
+            **/com/myproject/cooking1/entities/DBConnection.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
