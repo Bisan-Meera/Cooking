@@ -11,6 +11,8 @@
     <name>COOKING1</name>
 
     <properties>
+        <sonar.analysis.mode>publish</sonar.analysis.mode>
+        <sonar.forceAnalysis>true</sonar.forceAnalysis>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <sonar.projectKey>COOKING1</sonar.projectKey>
