@@ -22,6 +22,8 @@
         <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <sonar.sources>src/main/java</sonar.sources>
         <sonar.tests>src/test/java</sonar.tests>
+        <sonar.analysis.mode>publish</sonar.analysis.mode>
+        <sonar.newCode.period>1</sonar.newCode.period>
 
     </properties>
 
