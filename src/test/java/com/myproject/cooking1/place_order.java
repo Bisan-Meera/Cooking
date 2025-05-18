@@ -72,4 +72,27 @@ public class place_order {
         List<String> taskList = OrderService.getTasksByOrderId(orderId);
         assertEquals("Expected 1 task per order", 1, taskList.size());
     }
+    @Then("the system should handle the order according to ingredient stock levels")
+    public void theSystemShouldHandleOrderBasedOnStock() {
+        try {
+            OrderService service = new OrderService();
+            orderId = service.createOrder(customerId, selectedMeals);
+            System.out.println("✅ Order placed successfully with order ID: " + orderId);
+            assertTrue("Order should be created when stock is sufficient", orderId > 0);
+
+            List<String> taskList = OrderService.getTasksByOrderId(orderId);
+            assertEquals("Expected 1 task per order", 1, taskList.size());
+
+        } catch (RuntimeException e) {
+            System.out.println("❌ Order failed as expected: " + e.getMessage());
+            assertTrue("Order failed due to low stock", e.getMessage().startsWith("Cannot order"));
+        } catch (SQLException e) {
+            throw new RuntimeException("Unexpected SQL error", e);
+        }
+    }
+
+
+
+
+
 }

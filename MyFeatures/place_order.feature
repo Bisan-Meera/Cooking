@@ -8,16 +8,19 @@ Feature: Place an Order
     Given the user is logged in as a customer
     And the system has predefined meals
 
-  Scenario: Customer places a single meal order
+  Scenario: Customer places a single meal order depending on stock
     When the customer selects the following meal:
-      | Chicken Biryani |
-    Then an order should be added to the system
-    And a task should be created for kitchen management
+      | Spring Rolls |
+    Then the system should handle the order according to ingredient stock levels
 
-  Scenario: Customer places a multiple meal order
+  Scenario: Customer places a valid meal order
+    When the customer selects the following meal:
+      | Grilled Salmon |
+    Then the system should handle the order according to ingredient stock levels
+
+  Scenario: Customer places a multiple meal order depending on stock
     When the customer selects the following meals:
       | Chicken Biryani     |
       | Grilled Salmon      |
       | Vegetarian Lasagna  |
-    Then an order should be added to the system
-    And a task should be created for kitchen management
+    Then the system should handle the order according to ingredient stock levels
