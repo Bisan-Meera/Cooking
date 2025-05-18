@@ -21,9 +21,9 @@ Feature: Custom Meal Creation and Ingredient Validation
   Scenario: Reject custom meal with no ingredients
     Given a customer is on the custom meal creator page
     When they submit the form without selecting any ingredients
-    Then the system should show "At least one ingredient must be selected"
+    Then the system should display the validation message "At least one ingredient must be selected"
 
   Scenario: Handle database error during custom meal save
     Given a customer selects chicken and rice
     When a database error occurs during the save
-    Then the system should display "At least one ingredient must be selected"
+    Then the system should display the system error message "Failed to save custom meal due to system error"

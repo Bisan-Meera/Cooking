@@ -189,11 +189,18 @@ public class custom_meal_creator {
             TestContext.set("lastMessage", e.getMessage());
         }
     }
-    @Then("the system should notify {string}")
-    public void theSystemShouldNotify(String expectedMessage) {
-        String actualMessage = TestContext.get("lastMessage", String.class);
-        assertEquals(expectedMessage, actualMessage);
+    @Then("the system should display the validation message {string}")
+    public void systemDisplaysValidationMessage(String expectedMessage) {
+        String actual = TestContext.get("lastMessage", String.class);
+        assertEquals(expectedMessage, actual);
     }
+
+    @Then("the system should display the system error message {string}")
+    public void systemDisplaysSystemErrorMessage(String expectedMessage) {
+        String actual = TestContext.get("lastMessage", String.class);
+        assertEquals(expectedMessage, actual);
+    }
+
 
 
     @Given("a customer selects chicken and rice")
