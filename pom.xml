@@ -24,7 +24,7 @@
         <sonar.tests>src/test/java</sonar.tests>
         <sonar.analysis.mode>publish</sonar.analysis.mode>
         <sonar.newCode.period>2024-01-01</sonar.newCode.period>
-
+        <sonar.java.binaries>${project.build.outputDirectory}</sonar.java.binaries>
     </properties>
 
     <dependencies>
