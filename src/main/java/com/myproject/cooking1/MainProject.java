@@ -238,7 +238,7 @@ public class MainProject {
             System.out.println("3. View Past Orders");
             System.out.println("4. Create Custom Meal");
             System.out.println("5. Get AI Recipe Recommendation (Coming Soon)");
-            System.out.println("6. Make an order (Coming Soon)");
+            System.out.println("6. Make an order");
             System.out.println("7. Exit");
             System.out.print("Choose an option: ");
 
@@ -345,8 +345,53 @@ public class MainProject {
 
                 case "5":
                 case "6":
-                    System.out.println("Feature coming soon...");
+                    System.out.println("\n--- Place an Order from Menu ---");
+
+                    // Fetch meals from database
+                    List<String> availableMeals = new ArrayList<>();
+                    try (Connection conn = DBConnection.getConnection()) {
+                        PreparedStatement stmt = conn.prepareStatement("SELECT name FROM Meals");
+                        ResultSet rs = stmt.executeQuery();
+                        System.out.println("Available Meals:");
+                        while (rs.next()) {
+                            String meal = rs.getString("name");
+                            availableMeals.add(meal);
+                            System.out.println(" - " + meal);
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("❌ Failed to fetch meals.");
+                        break;
+                    }
+
+                    List<String> selectedMeals = new ArrayList<>();
+                    System.out.println("\nType meal names to add to your order (type 'done' to finish):");
+                    while (true) {
+                        String meal = scanner.nextLine().trim();
+                        if (meal.equalsIgnoreCase("done")) break;
+                        if (availableMeals.contains(meal)) {
+                            selectedMeals.add(meal);
+                        } else {
+                            System.out.println("⚠️ Meal not found. Try again.");
+                        }
+                    }
+
+                    if (selectedMeals.isEmpty()) {
+                        System.out.println("No meals selected. Order cancelled.");
+                        break;
+                    }
+
+                    try {
+                        OrderService orderServiceReal = new OrderService();
+                        int orderId = orderServiceReal.createOrder(user.getUserId(), selectedMeals);
+                        System.out.println("✅ Order placed successfully! Order ID: " + orderId);
+                    } catch (RuntimeException e) {
+                        System.out.println("❌ Order failed: " + e.getMessage());
+                    } catch (SQLException e) {
+                        System.out.println("❌ System error while placing order.");
+                    }
+
                     break;
+
                 case "7":
                     running = false;
                     System.out.println("Logging out. Goodbye, " + user.getName() + "!");
