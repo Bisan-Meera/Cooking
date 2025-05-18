@@ -29,45 +29,42 @@ public class CustomOrderService {
                 if (rs.next()) {
                     double qty = rs.getDouble("stock_quantity");
                     if (qty < 0.10) {
-                        throw new IllegalArgumentException(capitalize(name) + " is unavailable");
+                        // Inline capitalization
+                        String capitalized = name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
+                        throw new IllegalArgumentException(capitalized + " is unavailable");
                     }
                 } else {
                     throw new IllegalArgumentException("Ingredient not found: " + name);
                 }
             }
 
-            // Create custom order (basic version, linking only to user)
+            // Create custom order
             PreparedStatement insertOrder = conn.prepareStatement(
                     "INSERT INTO Customized_Orders (customer_id, notes) VALUES (?, ?) RETURNING custom_order_id"
             );
             insertOrder.setInt(1, userId);
             insertOrder.setString(2, "Custom meal with ingredients: " + String.join(", ", ingredients));
             ResultSet orderRs = insertOrder.executeQuery();
-
             if (!orderRs.next()) throw new SQLException("Failed to create custom order");
-
             int customOrderId = orderRs.getInt("custom_order_id");
 
-            //  Insert corresponding unassigned cooking task
+            // Insert task
             PreparedStatement insertTask = conn.prepareStatement(
                     "INSERT INTO Tasks (custom_order_id, task_type, status) VALUES (?, 'cooking', 'active')"
             );
             insertTask.setInt(1, customOrderId);
             insertTask.executeUpdate();
 
-
-            // Deduct stock and save ingredients
+            // Deduct stock and save ingredient usage
             for (String name : ingredients) {
-                PreparedStatement getId = conn.prepareStatement("SELECT ingredient_id FROM Ingredients WHERE name ILIKE ?");
+                PreparedStatement getId = conn.prepareStatement(
+                        "SELECT ingredient_id FROM Ingredients WHERE name ILIKE ?"
+                );
                 getId.setString(1, name);
                 ResultSet idRs = getId.executeQuery();
-
                 if (!idRs.next()) throw new SQLException("Ingredient ID not found for: " + name);
                 int ingId = idRs.getInt("ingredient_id");
-               // double currentQty = idRs.getDouble("stock_quantity") - 0.10;
-                //double threshold = idRs.getDouble("threshold");
-               // String ingName = idRs.getString("name");
-                // Save ingredient usage
+
                 PreparedStatement insertUsage = conn.prepareStatement(
                         "INSERT INTO Customized_Order_Ingredients (custom_order_id, ingredient_id, quantity) VALUES (?, ?, ?)"
                 );
@@ -76,14 +73,14 @@ public class CustomOrderService {
                 insertUsage.setDouble(3, 0.10);
                 insertUsage.executeUpdate();
 
-                // Deduct stock
                 PreparedStatement deduct = conn.prepareStatement(
                         "UPDATE Ingredients SET stock_quantity = stock_quantity - 0.10 WHERE ingredient_id = ?"
                 );
                 deduct.setInt(1, ingId);
                 deduct.executeUpdate();
-
             }
+
+            // Handle substitutions
             for (Map.Entry<String, String> entry : substitutions.entrySet()) {
                 String original = entry.getKey();
                 String substitute = entry.getValue();
@@ -104,9 +101,6 @@ public class CustomOrderService {
         }
     }
 
-    private static String capitalize(String s) {
-        return s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
-    }
 
 
 
