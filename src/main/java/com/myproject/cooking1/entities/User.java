@@ -15,12 +15,6 @@ public class User {
     private String role;
     private String expertise;
 
-    public static final int UPDATE_NAME = 1;
-    public static final int UPDATE_EMAIL = 2;
-    public static final int UPDATE_PASSWORD = 3;
-    public static final int UPDATE_ROLE = 4;
-    public static final int DELETE_USER = 5;
-
     public User(int userId, String name, String email, String password, String role, String expertise) {
         this.userId = userId;
         this.name = name;
@@ -111,53 +105,6 @@ public class User {
         return null;
     }
 
-
-
-    public static boolean updateUser(User user, Connection conn, int updateType) throws SQLException {
-        String sql;
-        switch (updateType) {
-            case UPDATE_NAME:
-                sql = "UPDATE Users SET name = ? WHERE user_id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, user.getName());
-                    stmt.setInt(2, user.getUserId());
-                    return stmt.executeUpdate() > 0;
-                }
-            case UPDATE_EMAIL:
-                sql = "UPDATE Users SET email = ? WHERE user_id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, user.getEmail());
-                    stmt.setInt(2, user.getUserId());
-                    return stmt.executeUpdate() > 0;
-                }
-            case UPDATE_PASSWORD:
-                sql = "UPDATE Users SET password = ? WHERE user_id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, user.getPassword());
-                    stmt.setInt(2, user.getUserId());
-                    return stmt.executeUpdate() > 0;
-                }
-            case UPDATE_ROLE:
-                sql = "UPDATE Users SET role = ? WHERE user_id = ?";
-                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setString(1, user.getRole());
-                    stmt.setInt(2, user.getUserId());
-                    return stmt.executeUpdate() > 0;
-                }
-            case DELETE_USER:
-                return deleteUserById(user.getUserId(), conn);
-            default:
-                return false;
-        }
-    }
-
-    public static boolean deleteUserById(int userId, Connection conn) throws SQLException {
-        String sql = "DELETE FROM Users WHERE user_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
-            return stmt.executeUpdate() > 0;
-        }
-    }
 
     public String getExpertise() {
         return expertise;
