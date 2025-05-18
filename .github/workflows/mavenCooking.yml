@@ -11,7 +11,7 @@ jobs:
   build:
     name: Build and analyze
     runs-on: ubuntu-latest
-    environment: testSonar  # ✅ This line enables access to environment secrets like SONAR_TOKEN
+    environment: testSonar  # ✅ This enables access to secrets like SONAR_TOKEN
 
     steps:
       - name: Checkout repository
@@ -47,8 +47,10 @@ jobs:
           DB_PASS: ${{ secrets.SUPABASE_DB_PASS }}
         run: |
           echo "🔗 Connecting to Supabase at $DB_URL..."
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          mvn clean verify jacoco:report \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=Bisan-Meera_Cooking \
             -Dsonar.organization=bisan-meera \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN
+            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
