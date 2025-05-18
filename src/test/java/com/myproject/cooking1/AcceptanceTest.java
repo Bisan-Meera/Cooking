@@ -7,12 +7,14 @@ import org.junit.runner.RunWith;
 @RunWith(Cucumber.class)
 @CucumberOptions(
         features = "MyFeatures",
+        glue = {"com.myproject.cooking1"},
         monochrome = true,
         snippets = SnippetType.CAMELCASE,
-        glue = {"com.myproject.cooking1"}
+        plugin = {
+                "pretty",
+                "json:target/cucumber-report.json"
+        }
 )
-
-
-
 public class AcceptanceTest {
 }
+
