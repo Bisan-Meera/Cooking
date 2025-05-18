@@ -162,21 +162,7 @@ public class TaskAssignmentService {
         return false;
     }
 
-    public static List<Integer> getPendingTaskIds() {
-        List<Integer> ids = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT task_id FROM Tasks WHERE assigned_to IS NULL OR assigned_to = 0"
-            );
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                ids.add(rs.getInt("task_id"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ids;
-    }
+//
 
     public static String getChefExpertise(int chefId) {
         try (Connection conn = DBConnection.getConnection()) {
