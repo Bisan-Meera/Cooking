@@ -71,6 +71,26 @@ public class NotificationService {
         String message = formatNotification("substitution", "Substitution applied: " + original + " → " + substitute);
         notifyAllByRole("chef", message);
     }
+    // Returns true if any unread notification for this chef contains the given task ID
+    public static boolean chefHasNotificationWithTaskId(int chefId, int taskId) {
+        for (String content : getUnreadNotifications(chefId)) {
+            if (content != null && content.contains(String.valueOf(taskId))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Returns true if any unread notification for this customer contains the given string
+    public static boolean customerHasNotificationContent(int customerId, String content) {
+        for (String n : getUnreadNotifications(customerId)) {
+            if (n != null && n.contains(content)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
 
 
