@@ -36,7 +36,6 @@ public class AdminService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
         return orders;
     }
 }
