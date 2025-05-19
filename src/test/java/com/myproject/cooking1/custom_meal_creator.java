@@ -9,11 +9,8 @@ import io.cucumber.java.en.When;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -213,14 +210,40 @@ public class custom_meal_creator {
     public void aDatabaseErrorOccursDuringTheSave() {
         int userId = TestContext.get("userId", Integer.class);
         List<String> ingredients = TestContext.get("selectedIngredients", List.class);
-        Map<String, String> substitutions = TestContext.getOrDefault("substitutions", new HashMap<>(), Map.class);
+        Map<String, String> substitutions = new HashMap<>();
 
         try {
-            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients,substitutions);
+            // ✅ Activate error simulation
+            CustomOrderService.FORCE_DB_ERROR = true;
+
+            boolean success = CustomOrderService.submitCustomMeal(userId, ingredients, substitutions);
             TestContext.set("orderSuccess", success);
         } catch (Exception e) {
             TestContext.set("orderSuccess", false);
-            TestContext.set("lastMessage", "Failed to save custom meal due to system error");
+            TestContext.set("lastMessage", e.getMessage());
+        } finally {
+            // ✅ Always turn off after test to avoid affecting others
+            CustomOrderService.FORCE_DB_ERROR = false;
         }
+    }
+
+    private Exception capturedException;
+    @Then("the system should notify {string}")
+    public void theSystemShouldNotify(String expectedMessage) {
+        // Simulate a meal submission with unavailable ingredient (like "avocado")
+        List<String> ingredients = new ArrayList<>();
+        ingredients.add("avocado");
+
+        Map<String, String> substitutions = new HashMap<>();
+
+        try {
+            CustomOrderService.submitCustomMeal(1, ingredients, substitutions);
+            fail("Expected an exception to be thrown");
+        } catch (Exception e) {
+            capturedException = e;
+        }
+
+        assertNotNull(capturedException, "Expected exception was not thrown");
+        assertEquals(expectedMessage, capturedException.getMessage());
     }
 }

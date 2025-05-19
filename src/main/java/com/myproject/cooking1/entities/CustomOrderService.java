@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 public class CustomOrderService {
+    // Top of the class
+    public static boolean FORCE_DB_ERROR = false;
+
     public static boolean submitCustomMeal(int userId, List<String> ingredients, Map<String, String> substitutions) {
         if (ingredients == null || ingredients.isEmpty()) {
             throw new IllegalArgumentException("At least one ingredient must be selected");
@@ -36,6 +39,9 @@ public class CustomOrderService {
                 } else {
                     throw new IllegalArgumentException("Ingredient not found: " + name);
                 }
+            }
+            if (FORCE_DB_ERROR) {
+                throw new SQLException("Simulated database failure");
             }
 
             // Create custom order
