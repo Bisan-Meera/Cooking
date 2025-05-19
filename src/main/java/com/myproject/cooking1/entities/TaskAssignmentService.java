@@ -12,7 +12,7 @@ public class TaskAssignmentService {
 
 
     public static int assignToLeastLoadedChef() {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             int chefId = findLeastLoadedChef();
             if (chefId == -1) return -1;
 
@@ -24,7 +24,7 @@ public class TaskAssignmentService {
     }
 
     public static int assignToChefWithExpertise(String cuisine) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT u.user_id FROM Users u " +
                             "LEFT JOIN Tasks t ON u.user_id = t.assigned_to AND t.status = 'active' " +
@@ -60,7 +60,7 @@ public class TaskAssignmentService {
     }
 
     public static void showPendingTasksWithDetails() {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT task_id, order_id, custom_order_id FROM Tasks WHERE assigned_to IS NULL OR assigned_to = 0"
             );
@@ -117,7 +117,7 @@ public class TaskAssignmentService {
     }
 
     public static int getAssignedChef(int taskId) throws SQLException {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT assigned_to FROM Tasks WHERE task_id = ?"
             );
@@ -131,7 +131,7 @@ public class TaskAssignmentService {
     }
 
     public static int findLeastLoadedChef() throws SQLException {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT u.user_id, COUNT(t.task_id) as task_count " +
                             "FROM Users u LEFT JOIN Tasks t ON u.user_id = t.assigned_to AND t.status = 'active' " +
@@ -148,7 +148,7 @@ public class TaskAssignmentService {
     }
 
     public static boolean hasNotification(int chefId, int taskId) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT * FROM Notifications WHERE user_id = ? AND content LIKE ?"
             );
@@ -165,7 +165,7 @@ public class TaskAssignmentService {
 //
 
     public static String getChefExpertise(int chefId) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT expertise FROM Users WHERE user_id = ? AND role = 'chef'"
             );
@@ -182,7 +182,7 @@ public class TaskAssignmentService {
 
     public static List<User> getAllChefsWithWorkloadAndExpertise() {
         List<User> chefs = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT u.user_id, u.name, u.email, u.password, u.role, u.expertise, COUNT(t.task_id) AS workload " +
                             "FROM Users u LEFT JOIN Tasks t ON u.user_id = t.assigned_to AND t.status = 'active' " +
@@ -207,7 +207,7 @@ public class TaskAssignmentService {
     }
 
     public static String getTaskCount(int userId) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT COUNT(*) FROM Tasks WHERE assigned_to = ? AND status = 'active'"
             );
@@ -223,7 +223,7 @@ public class TaskAssignmentService {
     }
 
     public static boolean assignTaskToChef(int taskId, int chefId) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "UPDATE Tasks SET assigned_to = ?, status = 'active' WHERE task_id = ?"
             );
@@ -241,7 +241,7 @@ public class TaskAssignmentService {
         return false;
     }
     public static boolean markTaskAsReady(int taskId) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             // 1. Update task status
             PreparedStatement update = conn.prepareStatement(
                     "UPDATE Tasks SET status = 'ready' WHERE task_id = ?"
@@ -278,7 +278,7 @@ public class TaskAssignmentService {
     }
 
     public static void showActiveTasksForChef(int chefId) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             String query = """
                     SELECT t.task_id,
                            CASE 
@@ -322,7 +322,7 @@ public class TaskAssignmentService {
     // Capture the output of showPendingTasksWithDetails as a String (for test assertions)
     public static String capturePendingTasksWithDetails() {
         StringBuilder sb = new StringBuilder();
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT task_id, order_id, custom_order_id FROM Tasks WHERE assigned_to IS NULL OR assigned_to = 0"
             );
@@ -388,7 +388,7 @@ public class TaskAssignmentService {
     // Capture active tasks for chef as a String
     public static String captureActiveTasksForChef(int chefId) {
         StringBuilder sb = new StringBuilder();
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DatabaseHelper.getConnection()) {
             String query = """
             SELECT t.task_id,
                    CASE 
