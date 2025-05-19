@@ -20,3 +20,7 @@ Feature: Chef views customer dietary preferences
     When the chef opens the order details
     Then the chef should see the message "No preferences specified"
 
+  Scenario: Chef encounters a database error while loading preferences
+    Given a special customer ID triggers DB failure
+    When the chef opens the order details
+    Then the chef should see the message "Error loading preferences"

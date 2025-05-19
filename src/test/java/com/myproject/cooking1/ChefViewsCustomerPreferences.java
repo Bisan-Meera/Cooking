@@ -182,5 +182,9 @@ public class ChefViewsCustomerPreferences {
     }
 
 
+    @Given("a special customer ID triggers DB failure")
+    public void aSpecialCustomerIdTriggersDbFailure() {
+        TestContext.set("customerId", -999);
+    }
 
 }
