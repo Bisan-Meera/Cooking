@@ -5,6 +5,7 @@ import com.myproject.cooking1.entities.User;
 import io.cucumber.java.en.*;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,7 +40,20 @@ public class Login {
         assertEquals(expectedMessage, actual);
         System.out.println(actual);
     }
-
+    @Given("Chef Yasser is present in the database")
+    public void chefYasserIsPresentInDatabase() {
+        try (Connection conn = DBConnection.getConnection()) {
+           // conn.setAutoCommit(false);
+            PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO Users (user_id, name, email, password, role, expertise) " +
+                            "VALUES (3, 'Chef Yasser', 'yasser@example.com', 'pass', 'chef', 'French') " +
+                            "ON CONFLICT (user_id) DO NOTHING"
+            );
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     @Given("user with user_id {int} and name {string} is not logged in")
     public void userWithUserIdAndNameIsNotLoggedIn(Integer userId, String name) {
         loggedInUsers.remove(userId);

@@ -3,7 +3,7 @@ Feature:Login
 
   Background:
     Given the Users table contains existing users
-
+    And Chef Yasser is present in the database
   Scenario: User already logged in
     Given user with user_id 1 and name "Layla Hassan" is already logged in
     When they try to log in again with user_id 1 and name "Layla Hassan"
