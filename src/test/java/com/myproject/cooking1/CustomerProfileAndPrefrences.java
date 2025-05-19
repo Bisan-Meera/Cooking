@@ -1,9 +1,6 @@
 package com.myproject.cooking1;
 
-import com.myproject.cooking1.entities.CustomerPreferences;
-import com.myproject.cooking1.entities.CustomerProfileService;
-import com.myproject.cooking1.entities.ProfileForm;
-import com.myproject.cooking1.entities.TestContext;
+import com.myproject.cooking1.entities.*;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -182,6 +179,39 @@ public class CustomerProfileAndPrefrences {
         TestContext.set("lastMessage", result);
     }
 
+    @When("they try to save preferences and a simulated DB failure occurs")
+    public void theyTryToSavePreferencesAndASimulatedDbFailureOccurs() {
+        try {
+            DatabaseHelper.simulateDatabaseFailure(true); // 💣 activate fail mode
+            profileService.updatePreferences(currentUserId, "Vegan", "None");
+        } catch (RuntimeException e) {
+            TestContext.set("lastMessage", e.getMessage());
+        } finally {
+            DatabaseHelper.simulateDatabaseFailure(false); // ✅ reset
+        }
+    }
+    @When("they try to view preferences and the database fails")
+    public void theyTryToViewPreferencesAndDbFails() {
+        try {
+            DatabaseHelper.simulateDatabaseFailure(true);
+            profileService.viewPreferences(currentUserId);
+        } catch (RuntimeException e) {
+            TestContext.set("lastMessage", e.getMessage());
+        } finally {
+            DatabaseHelper.simulateDatabaseFailure(false);
+        }
+    }
+    @When("they view preferences without any saved data")
+    public void theyViewPreferencesWithoutSavedData() {
+        CustomerPreferences prefs = profileService.viewPreferences(currentUserId);
+        TestContext.set("prefs", prefs);
+    }
+    @Then("the system should return blank preferences")
+    public void theSystemShouldReturnBlankPreferences() {
+        CustomerPreferences prefs = TestContext.get("prefs", CustomerPreferences.class);
+        assertEquals("", prefs.getDietaryPreference());
+        assertEquals("", prefs.getAllergy());
+    }
 
 
 }

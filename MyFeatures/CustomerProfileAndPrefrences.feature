@@ -42,3 +42,18 @@ Feature: Customer Profile & Preferences
       | UserID |
       | 1      |
       | 2      |
+
+  Scenario: Exception occurs while saving preferences
+    Given a logged-in customer with user_id 3 is on the profile settings page
+    When they try to save preferences and a simulated DB failure occurs
+    Then the system should display "Database error while updating preferences"
+
+  Scenario: Exception occurs while viewing preferences
+    Given a logged-in customer with user_id 3 is on the preferences page
+    When they try to view preferences and the database fails
+    Then the system should display "Database error while fetching preferences"
+
+  Scenario: Viewing preferences when none are saved
+    Given a logged-in customer with user_id 4 is on the preferences page
+    When they view preferences without any saved data
+    Then the system should return blank preferences

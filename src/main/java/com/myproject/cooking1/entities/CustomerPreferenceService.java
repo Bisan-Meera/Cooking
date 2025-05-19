@@ -9,6 +9,9 @@ import java.sql.SQLException;
 
 public class CustomerPreferenceService {
     public static CustomerPreferences getPreferencesByCustomerId(int userId) throws SQLException {
+        if (userId == -999) {
+            throw new SQLException("Simulated DB failure");
+        }
         String query = "SELECT dietary_preference, allergy FROM CustomerPreferences WHERE user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = ((Connection) conn).prepareStatement(query)) {
