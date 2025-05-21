@@ -7,6 +7,9 @@ Feature: Custom Meal Creation and Ingredient Validation
     And the user is logged in as a customer
 
   Scenario: Create a custom meal with available ingredients
+    Given the Ingredients table has current stock levels
+    And the ingredient "broccoli" stock is reset to 10.0
+    And the user is logged in as a customer
     Given a customer selects chicken, rice, and broccoli
     When they submit the custom meal request
     Then the system should accept and save the customized order
@@ -27,3 +30,14 @@ Feature: Custom Meal Creation and Ingredient Validation
     Given a customer selects chicken and rice
     When a database error occurs during the save
     Then the system should display the system error message "Failed to save custom meal due to system error"
+
+  Scenario: Custom meal with substitutions triggers chef notification
+    Given a customer selects chicken and rice
+    And they substitute "chicken" with "tofu"
+    When they submit the custom meal request
+    Then the system should accept and save the customized order
+
+  Scenario: Reject custom meal when stock is below required threshold
+    Given the ingredient "broccoli" has low stock
+    When a customer tries to add "broccoli" to their custom meal
+    Then the system should notify "Broccoli is unavailable"

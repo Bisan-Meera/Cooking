@@ -25,6 +25,7 @@ public class custom_meal_creator {
                 PreparedStatement insertStmt = conn.prepareStatement(
                         "INSERT INTO Ingredients (name, stock_quantity, unit, threshold) " +
                                 "VALUES (?, ?, ?, ?) ON CONFLICT (name) DO NOTHING"
+
                 );
                 insertStmt.setString(1, name);
                 insertStmt.setDouble(2, 10.0);
@@ -227,23 +228,47 @@ public class custom_meal_creator {
         }
     }
 
-    private Exception capturedException;
     @Then("the system should notify {string}")
     public void theSystemShouldNotify(String expectedMessage) {
-        // Simulate a meal submission with unavailable ingredient (like "avocado")
-        List<String> ingredients = new ArrayList<>();
-        ingredients.add("avocado");
-
-        Map<String, String> substitutions = new HashMap<>();
-
-        try {
-            CustomOrderService.submitCustomMeal(1, ingredients, substitutions);
-            fail("Expected an exception to be thrown");
-        } catch (Exception e) {
-            capturedException = e;
-        }
-
-        assertNotNull(capturedException, "Expected exception was not thrown");
-        assertEquals(expectedMessage, capturedException.getMessage());
+        String actual = TestContext.get("lastMessage", String.class);
+        assertNotNull(actual, "Expected a message but none was recorded");
+        assertEquals(expectedMessage, actual);
     }
+
+    @Given("they substitute {string} with {string}")
+    public void theySubstituteWith(String original, String substitute) {
+        Map<String, String> substitutions = new HashMap<>();
+        substitutions.put(original, substitute);
+        TestContext.set("substitutions", substitutions);
+    }
+
+    @Given("the ingredient {string} has low stock")
+    public void theIngredientHasLowStock(String ingredient) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE Ingredients SET stock_quantity = 0.09 WHERE name ILIKE ?"
+            );
+            stmt.setString(1, ingredient);
+            stmt.executeUpdate();
+            stmt.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set low stock", e);
+        }
+    }
+    @Given("the ingredient {string} stock is reset to {double}")
+    public void theIngredientStockIsResetTo(String name, double quantity) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE Ingredients SET stock_quantity = ? WHERE name ILIKE ?"
+            );
+            stmt.setDouble(1, quantity);
+            stmt.setString(2, name);
+            stmt.executeUpdate();
+            stmt.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to reset stock", e);
+        }
+    }
+
+
 }

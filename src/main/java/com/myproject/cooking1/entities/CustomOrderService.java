@@ -85,7 +85,7 @@ public class CustomOrderService {
                 deduct.setInt(1, ingId);
                 deduct.executeUpdate();
             }
-
+            conn.commit();
             // Handle substitutions
             for (Map.Entry<String, String> entry : substitutions.entrySet()) {
                 String original = entry.getKey();
@@ -98,7 +98,7 @@ public class CustomOrderService {
                 NotificationService.notifyAllByRole("chef", content);
             }
 
-            conn.commit();
+
             return true;
 
         } catch (SQLException e) {
