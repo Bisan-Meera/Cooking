@@ -7,6 +7,7 @@ import java.util.*;
 
 public class OrderService {
     private final Connection conn;
+    public static boolean FORCE_DB_ERROR = false;
 
     public OrderService() throws SQLException {
         this.conn = DBConnection.getConnection();
@@ -42,6 +43,7 @@ public class OrderService {
         Connection conn = DBConnection.getConnection();
         try {
             conn.setAutoCommit(false);
+            if (FORCE_DB_ERROR) throw new SQLException("Simulated error for test");
 
             // ✅ STEP 1: Check ingredient stock for each meal
             for (String meal : meals) {

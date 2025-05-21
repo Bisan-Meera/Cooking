@@ -24,3 +24,19 @@ Feature: Place an Order
       | Grilled Salmon      |
       | Vegetarian Lasagna  |
     Then the system should handle the order according to ingredient stock levels
+
+  Scenario: Customer tries to order a meal with low ingredient stock
+    When the customer selects the following meal:
+      | Grilled Salmon |
+    Then the system should handle the order according to ingredient stock levels
+
+  Scenario: Customer tries to order a non-existent meal
+    When the customer selects the following meal:
+      | Flying Pizza |
+    Then the system should handle the order according to ingredient stock levels
+
+  Scenario: Database error occurs during order creation
+    When the customer selects the following meal:
+      | Grilled Salmon |
+    And a database error is simulated
+    Then the system should handle the order according to ingredient stock levels

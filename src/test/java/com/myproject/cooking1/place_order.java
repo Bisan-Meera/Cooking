@@ -85,10 +85,22 @@ public class place_order {
 
         } catch (RuntimeException e) {
             System.out.println("❌ Order failed as expected: " + e.getMessage());
-            assertTrue("Order failed due to low stock", e.getMessage().startsWith("Cannot order"));
+            assertTrue("Order failed due to low stock or DB issue", e.getMessage().startsWith("Cannot order")
+                    || e.getMessage().startsWith("Failed to create order")
+                    || e.getMessage().startsWith("Meal not found"));
+
         } catch (SQLException e) {
             throw new RuntimeException("Unexpected SQL error", e);
+        } finally {
+            // Always reset
+            OrderService.FORCE_DB_ERROR = false;
         }
+    }
+
+
+    @And("a database error is simulated")
+    public void aDatabaseErrorIsSimulated() {
+        OrderService.FORCE_DB_ERROR = true;
     }
 
 
