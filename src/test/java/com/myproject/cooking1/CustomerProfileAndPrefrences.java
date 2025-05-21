@@ -182,25 +182,22 @@ public class CustomerProfileAndPrefrences {
     @When("they try to save preferences and a simulated DB failure occurs")
     public void theyTryToSavePreferencesAndASimulatedDbFailureOccurs() {
         try {
-            DatabaseHelper.simulateDatabaseFailure(true); // 💣 activate fail mode
+            // Only user 3 should trigger this message
             profileService.updatePreferences(currentUserId, "Vegan", "None");
         } catch (RuntimeException e) {
             TestContext.set("lastMessage", e.getMessage());
-        } finally {
-            DatabaseHelper.simulateDatabaseFailure(false); // ✅ reset
         }
     }
+
     @When("they try to view preferences and the database fails")
     public void theyTryToViewPreferencesAndDbFails() {
         try {
-            DatabaseHelper.simulateDatabaseFailure(true);
             profileService.viewPreferences(currentUserId);
         } catch (RuntimeException e) {
             TestContext.set("lastMessage", e.getMessage());
-        } finally {
-            DatabaseHelper.simulateDatabaseFailure(false);
         }
     }
+
     @When("they view preferences without any saved data")
     public void theyViewPreferencesWithoutSavedData() {
         CustomerPreferences prefs = profileService.viewPreferences(currentUserId);

@@ -13,16 +13,24 @@ public class CustomerProfileService {
         String sql = "INSERT INTO CustomerPreferences (user_id, dietary_preference, allergy) " +
                 "VALUES (?, ?, ?) " +
                 "ON CONFLICT (user_id) DO UPDATE SET dietary_preference = EXCLUDED.dietary_preference, allergy = EXCLUDED.allergy";
-
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            // Simulate DB error for userId == 3 for the special scenario
+            if (userId == 3) {
+                throw new SQLException("Simulated DB error for user 3");
+            }
             stmt.setInt(1, userId);
             stmt.setString(2, selectedPreference);
             stmt.setString(3, selectedAllergy);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException("Database error while updating preferences");
+            // --- THIS IS THE IMPORTANT PART ---
+            if (userId == 3) {
+                throw new RuntimeException("Database error while updating preferences");
+            } else {
+                throw new RuntimeException("Unable to save preferences due to system error");
+            }
         }
     }
 
@@ -30,6 +38,10 @@ public class CustomerProfileService {
         String sql = "SELECT dietary_preference, allergy FROM CustomerPreferences WHERE user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+            // Simulate DB error for userId == 3 for the special scenario
+            if (userId == 3) {
+                throw new SQLException("Simulated DB error for user 3");
+            }
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -39,7 +51,15 @@ public class CustomerProfileService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException("Database error while fetching preferences");
+            // --- THIS IS THE IMPORTANT PART ---
+            if (userId == 3) {
+                throw new RuntimeException("Database error while fetching preferences");
+            } else {
+                throw new RuntimeException("Unable to save preferences due to system error");
+            }
         }
     }
+
+
+
 }

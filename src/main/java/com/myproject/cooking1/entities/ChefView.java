@@ -13,11 +13,12 @@ public class ChefView {
             } else {
                 this.displayedPreference = prefs.toString();
             }
-        } catch (SQLException e) {
-            this.displayedPreference = "Error loading preferences";
-            e.printStackTrace();
-        }
+        } catch (RuntimeException e) {
+        this.displayedPreference = "Error loading preferences";
+        e.printStackTrace();
     }
+
+}
 
     public String getDisplayedPreference() {
         return displayedPreference;
