@@ -4,7 +4,14 @@ import com.myproject.cooking1.entities.IngredientStockService;
 import com.myproject.cooking1.entities.NotificationService;
 import io.cucumber.java.en.*;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class Ingredient_stock_management {
 
@@ -13,6 +20,9 @@ public class Ingredient_stock_management {
     private int ingredientId;
     private double newQuantity = 100.0;
     private final IngredientStockService stockService = new IngredientStockService();
+    private List<String> lowStockIngredients;
+    private boolean belowThresholdResult;
+    private String retrievedIngredientName;
 
     // Background
     @Given("the system tracks ingredient stock levels in the {string} table")
@@ -180,4 +190,154 @@ public class Ingredient_stock_management {
     public void suggestRestockIfNeeded() {
         theSystemCreatesRestockingNotification();
     }
+    @Given("order ID {int} exists with meals and ingredients")
+    public void orderExistsWithMealsAndIngredients(int orderId) {
+        // For now, assume your database is already populated, so just set the order ID
+        this.currentOrderId = orderId;
+        System.out.println("✅ Using existing order ID: " + orderId);
+    }
+    @Then("ingredient {string} should have stock {double}")
+    public void ingredientShouldHaveStock(String name, double expectedStock) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT stock_quantity FROM ingredients WHERE name ILIKE ?"
+            );
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                double actual = rs.getDouble("stock_quantity");
+                System.out.println("🧾 " + name + " stock: expected=" + expectedStock + ", actual=" + actual);
+                assertEquals(expectedStock, actual, 0.01);  // allow small float tolerance
+            } else {
+                throw new AssertionError("❌ Ingredient not found: " + name);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to verify stock", e);
+        }
+    }
+
+    @Given("ingredient {string} stock is reset to {double}")
+    public void resetIngredientStock(String name, double quantity) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE ingredients SET stock_quantity = ?, last_updated = CURRENT_TIMESTAMP WHERE name ILIKE ?"
+            );
+            stmt.setDouble(1, quantity);
+            stmt.setString(2, name);
+            stmt.executeUpdate();
+            stmt.close();
+            System.out.println("🔁 Reset stock for " + name + " to " + quantity);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to reset stock", e);
+        }
+    }
+    @Then("the {string} timestamp for ingredient {string} should be recent")
+    public void ingredientTimestampShouldBeRecent(String field, String ingredientName) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT last_updated FROM ingredients WHERE name ILIKE ?"
+            );
+            stmt.setString(1, ingredientName);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Timestamp updated = rs.getTimestamp("last_updated");
+                Timestamp now = new Timestamp(System.currentTimeMillis());
+
+                long diffInSeconds = (now.getTime() - updated.getTime()) / 1000;
+                System.out.println("🕓 " + ingredientName + " last updated: " + updated + " (diff: " + diffInSeconds + "s)");
+
+                assertTrue("Timestamp not recent (diff > 10s)", diffInSeconds <= 10);
+            } else {
+                throw new AssertionError("Ingredient not found: " + ingredientName);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to check timestamp", e);
+        }
+    }
+
+    @Then("a restocking notification for {string} should be sent to kitchen staff")
+    public void restockingNotificationSent(String ingredientName) {
+        List<String> messages = NotificationService.getUnreadNotifications(4);  // kitchen manager id = 1
+        boolean found = messages.stream().anyMatch(msg -> msg.toLowerCase().contains(ingredientName.toLowerCase()));
+        assertTrue("Expected restocking notification for " + ingredientName, found);
+        System.out.println("🔔 Notification found: ingredient = " + ingredientName);
+    }
+
+    @Given("ingredient {string} has a threshold of {double}")
+    public void setIngredientThreshold(String name, double threshold) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE ingredients SET threshold = ? WHERE name ILIKE ?"
+            );
+            stmt.setDouble(1, threshold);
+            stmt.setString(2, name);
+            stmt.executeUpdate();
+            stmt.close();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set threshold", e);
+        }
+    }
+    @When("the system checks for low-stock ingredients")
+    public void systemChecksLowStock() {
+        IngredientStockService service = new IngredientStockService();
+        lowStockIngredients = service.getLowStockIngredients();
+    }
+    @Then("the result should include {string}")
+    public void resultShouldIncludeIngredient(String name) {
+        assertTrue("Expected " + name + " to be in the low-stock list",
+                lowStockIngredients.stream().anyMatch(n -> n.equalsIgnoreCase(name)));
+    }
+
+    @When("kitchen staff sets the stock of {string} to {double}")
+    public void kitchenStaffSetsStock(String name, double newQty) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement("SELECT ingredient_id FROM ingredients WHERE name ILIKE ?");
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("ingredient_id");
+                IngredientStockService service = new IngredientStockService();
+                service.updateIngredientStock(id, newQty);
+            } else {
+                throw new AssertionError("❌ Ingredient not found: " + name);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("❌ Failed to update ingredient stock", e);
+        }
+    }
+
+    @When("the system checks if {string} is below its threshold")
+    public void checkIngredientBelowThreshold(String name) {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement("SELECT ingredient_id FROM ingredients WHERE name ILIKE ?");
+            ps.setString(1, name);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                int id = rs.getInt("ingredient_id");
+                IngredientStockService service = new IngredientStockService();
+                belowThresholdResult = service.isIngredientBelowThreshold(id);
+            } else {
+                throw new AssertionError("Ingredient not found: " + name);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to check threshold status", e);
+        }
+    }
+    @Then("the result should be {string}")
+    public void theResultShouldBe(String expected) {
+        boolean expectedBool = Boolean.parseBoolean(expected);
+        assertEquals("Threshold check result mismatch", expectedBool, belowThresholdResult);
+    }
+
+    @When("the system retrieves the name of ingredient ID {int}")
+    public void getIngredientNameById(int id) {
+        IngredientStockService service = new IngredientStockService();
+        retrievedIngredientName = service.getIngredientName(id);
+    }
+    @Then("the ingredient name should be {string}")
+    public void ingredientNameShouldBe(String expected) {
+        assertEquals("Ingredient name mismatch", expected, retrievedIngredientName);
+    }
+
 }

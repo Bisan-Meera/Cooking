@@ -42,3 +42,37 @@ Feature: Real-time Ingredient Stock Management and Restocking Suggestions
     And the system deducts from the default ingredient if no substitution exists
     And updates stock quantities and timestamps accordingly
     And suggests restocking if the substituted or original ingredient falls below the threshold
+
+  Scenario: Deduct stock when an order is confirmed
+    Given ingredient "Onions" stock is reset to 29.67
+    And order ID 1 exists with meals and ingredients
+    When the order is confirmed
+    Then ingredient "Onions" should have stock 29.62
+    And the "last_updated" timestamp for ingredient "Onions" should be recent
+
+  Scenario: Create restocking notification when stock falls below threshold
+    Given ingredient "Onions" stock is reset to 0.3
+    And order ID 1 exists with meals and ingredients
+    When the order is confirmed
+    Then a restocking notification for "Onions" should be sent to kitchen staff
+
+  Scenario: Identify low-stock ingredients
+    Given ingredient "rice" stock is reset to 0.3
+    And ingredient "rice" has a threshold of 0.5
+    When the system checks for low-stock ingredients
+    Then the result should include "rice"
+
+  Scenario: Kitchen staff manually updates an ingredient's stock
+    Given ingredient "Tomatoes" stock is reset to 20.0
+    When kitchen staff sets the stock of "Tomatoes" to 35.5
+    Then ingredient "Tomatoes" should have stock 35.5
+
+  Scenario: Check if an ingredient is below threshold
+    Given ingredient "Garlic" stock is reset to 0.2
+    And ingredient "Garlic" has a threshold of 0.5
+    When the system checks if "Garlic" is below its threshold
+    Then the result should be "true"
+
+  Scenario: Retrieve ingredient name by ID
+    When the system retrieves the name of ingredient ID 10
+    Then the ingredient name should be "Garlic"
