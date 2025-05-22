@@ -114,33 +114,6 @@ public class IngredientSubstitutionService {
         NotificationService.notifyChefsOfSubstitution(original, substitute);
     }
 
-    public static void createSubstitutionTask(int customOrderId, String original, String substitute, int customerId) {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
-
-            PreparedStatement orderStmt = conn.prepareStatement(
-                    "INSERT INTO Orders (customer_id, status) VALUES (?, ?) RETURNING order_id"
-            );
-            orderStmt.setInt(1, customerId);
-            orderStmt.setString(2, "pending");
-            ResultSet orderRs = orderStmt.executeQuery();
-
-            if (!orderRs.next()) throw new SQLException("Failed to create linked order");
-            int newOrderId = orderRs.getInt("order_id");
-
-            PreparedStatement taskStmt = conn.prepareStatement(
-                    "INSERT INTO Tasks (order_id, task_type, status) VALUES (?, ?, ?)"
-            );
-            taskStmt.setInt(1, newOrderId);
-            taskStmt.setString(2, "ingredient_substitution");
-            taskStmt.setString(3, "pending");
-            taskStmt.executeUpdate();
-
-            conn.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     private static boolean isMeat(String ingredientName) {
         return ingredientName.matches("(?i).*\\b(beef|chicken|lamb|salmon|tilapia)\\b.*");
