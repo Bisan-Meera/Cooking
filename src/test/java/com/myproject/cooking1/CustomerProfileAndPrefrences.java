@@ -6,6 +6,10 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
 import static junit.framework.TestCase.assertEquals;
 
 public class CustomerProfileAndPrefrences {
@@ -82,9 +86,21 @@ public class CustomerProfileAndPrefrences {
 
     @Given("the Users table contains customers")
     public void theUsersTableContainsCustomers() {
-        // Placeholder
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "INSERT INTO Users (user_id, name, email, password, role) " +
+                            "VALUES (?, ?, ?, ?, 'customer') ON CONFLICT (user_id) DO NOTHING"
+            );
+            stmt.setInt(1, 5000);
+            stmt.setString(2, "Test User");
+            stmt.setString(3, "test5000@test.com");
+            stmt.setString(4, "password123");
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Failed to insert test user: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
-
     @Given("a logged-in customer with user_id {int} has previously saved dietary preferences")
     public void aLoggedInCustomerWithUserIdHasPreviouslySavedDietaryPreferences(Integer userId) {
         currentUserId = userId;
@@ -341,7 +357,15 @@ public class CustomerProfileAndPrefrences {
         String result = form.submit();
         TestContext.set("lastMessage", result);
     }
-
+    @When("they set the preference to null and the allergy to {string}")
+    public void theySetPreferenceNullAndAllergy(String allergy) {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences(null);
+        form.setAllergy(allergy);
+        String result = form.submit();
+        TestContext.set("lastMessage", result != null ? result : "");
+    }
 
 
 

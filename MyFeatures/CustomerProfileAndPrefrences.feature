@@ -122,3 +122,15 @@ Feature: Customer Profile & Preferences
     Given a logged-in customer with user_id 406 is on the preferences page
     When they try to save preferences and a checked exception occurs
     Then the system should show "checked exception!"
+
+  Scenario: Submit preferences with invalid user ID
+    Given a logged-in customer with user_id -1 is on the preferences page
+    When they set the preference to "Vegan" and the allergy to "None"
+    And they submit the profile form
+    Then the system should show "Invalid user ID"
+
+  Scenario: Submit form with null preference and non-empty allergy
+    Given a logged-in customer with user_id 5000 is on the preferences page
+    When they set the preference to null and the allergy to "Gluten"
+    And they submit the profile form
+    Then the system should show "Preferences saved successfully"

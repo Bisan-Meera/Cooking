@@ -10,6 +10,9 @@ import java.sql.SQLException;
 public class CustomerProfileService {
 
     public void updatePreferences(int userId, String selectedPreference, String selectedAllergy) {
+        if (userId <= 0) {
+            throw new RuntimeException("Invalid user ID");
+        }
         String sql = "INSERT INTO CustomerPreferences (user_id, dietary_preference, allergy) " +
                 "VALUES (?, ?, ?) " +
                 "ON CONFLICT (user_id) DO UPDATE SET dietary_preference = EXCLUDED.dietary_preference, allergy = EXCLUDED.allergy";
