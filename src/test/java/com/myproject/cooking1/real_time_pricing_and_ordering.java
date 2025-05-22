@@ -5,6 +5,14 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.List;
+import java.util.Scanner;
+
+import static org.junit.Assert.assertFalse;
+
 public class real_time_pricing_and_ordering {
 
     PurchaseOrderService service = new PurchaseOrderService();
@@ -142,5 +150,47 @@ public class real_time_pricing_and_ordering {
     @Then("any pending purchase orders for that ingredient are updated to reflect the new price")
     public void any_pending_purchase_orders_for_that_ingredient_are_updated_to_reflect_the_new_price() {
         System.out.println("Updated pending orders with new price.");
+    }
+
+
+    List<String> pendingList;
+
+    @When("the kitchen manager views pending orders")
+    public void theKitchenManagerViewsPendingOrders() {
+        pendingList = service.listPendingOrders();
+    }
+
+    @Then("the list should contain at least one order summary")
+    public void theListShouldContainAtLeastOneOrderSummary() {
+        assertFalse("No pending orders found", pendingList.isEmpty());
+    }
+
+    String simulatedOutput;
+
+    @Given("the kitchen manager opens the submenu with choices: {string}, {string}")
+    public void theKitchenManagerOpensTheSubmenuWithChoices(String first, String second) {
+        // Simulate user input for the submenu
+        String simulatedInput = first + "\n" + second + "\n";
+        Scanner scanner = new Scanner(new ByteArrayInputStream(simulatedInput.getBytes()));
+
+        // Redirect system output to capture what the submenu prints
+        ByteArrayOutputStream outputBuffer = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outputBuffer));
+
+        // Call the method under test
+        try {
+            service.openOrderSubMenu(scanner);
+        } finally {
+            System.setOut(originalOut);
+            simulatedOutput = outputBuffer.toString(); // Save output for assertion
+        }
+    }
+
+    @Then("the submenu should display pending orders and exit")
+    public void theSubmenuShouldDisplayPendingOrdersAndExit() {
+        assert simulatedOutput.contains("Purchase Order Management");
+        assert simulatedOutput.contains("View Pending Orders") || simulatedOutput.contains("No pending orders.");
+        assert simulatedOutput.contains("Back to Kitchen Manager Page") || simulatedOutput.contains("Choose an option:");
     }
 }

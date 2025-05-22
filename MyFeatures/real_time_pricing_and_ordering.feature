@@ -50,3 +50,12 @@ Feature: Supplier integration for real-time ingredient pricing and automated pur
     When the system receives the new price update
     Then the supplier_prices table is updated with the latest price and timestamp
     And any pending purchase orders for that ingredient are updated to reflect the new price
+
+  Scenario: Check that pending purchase orders list is not empty
+    Given there are pending purchase orders in the system
+    When the kitchen manager views pending orders
+    Then the list should contain at least one order summary
+  # -- Scenario 6: Kitchen manager navigates the order management menu
+  Scenario: Kitchen manager interacts with the purchase order submenu
+    Given the kitchen manager opens the submenu with choices: "1", "5"
+    Then the submenu should display pending orders and exit
