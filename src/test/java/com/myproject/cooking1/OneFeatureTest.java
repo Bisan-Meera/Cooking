@@ -6,7 +6,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-        features = "MyFeatures/place_order.feature",
+        features = "MyFeatures/task_assignment.feature",
         glue = {"com.myproject.cooking1"},
         monochrome = true,
         plugin = {
