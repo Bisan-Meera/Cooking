@@ -333,6 +333,29 @@ public class CustomerProfileAndPrefrences {
         String result = form.submit();
         TestContext.set("lastMessage", result);
     }
+    @When("they try to save preferences and a checked exception occurs")
+    public void theyTryToSavePreferencesAndACheckedExceptionOccurs() {
+        ProfileForm form = new ProfileForm() {
+            @Override
+            public String submit() {
+                try {
+                    throw new Exception("checked exception!");
+                } catch (Exception e) {
+                    String msg = e.getMessage();
+                    if (msg != null && !msg.isBlank()) {
+                        return msg;
+                    }
+                    return "Unable to save preferences due to system error";
+                }
+            }
+        };
+        form.setUserId(currentUserId);
+        form.setPreferences("Keto");
+        form.setAllergy("Eggs");
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
 
 
 
