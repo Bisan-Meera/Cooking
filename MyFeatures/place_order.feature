@@ -83,3 +83,33 @@ Feature: Place an Order
   Scenario: Customer views their order history
     When the customer requests their order history
     Then the system should return a list of their past orders
+
+  Scenario: Customer places an order with multiple meals
+    Given the system has predefined meals
+    When the customer selects the following meals:
+      | Chicken Biryani     |
+      | Grilled Salmon      |
+      | Vegetarian Lasagna  |
+    Then an order should be added to the system
+    And a task should be created for kitchen management
+
+  Scenario: Customer attempts to place an order with no meals selected
+    Given the system has predefined meals
+    When the customer selects no meals
+    Then the system should not create an order
+
+  Scenario: Customer places an order with a meal containing one ingredient
+    Given the system has predefined meals
+    When the customer selects the following meal:
+      | Grilled Salmon      |
+    Then an order should be added to the system
+    And a task should be created for kitchen management
+
+  Scenario: Database error occurs while placing an order
+    Given the system has predefined meals
+    And a database error is simulated
+    When the customer selects the following meals:
+      | Chicken Biryani     |
+      | Grilled Salmon      |
+    Then the system should handle the order according to ingredient stock levels
+
