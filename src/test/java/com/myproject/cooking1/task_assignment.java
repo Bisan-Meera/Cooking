@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 import static com.myproject.cooking1.entities.TaskAssignmentService.assignTaskToChef;
 import static junit.framework.TestCase.assertEquals;
@@ -617,6 +618,110 @@ public class task_assignment {
     }
 
 
+    @Given("there are pending cooking tasks with a custom order")
+    public void thereArePendingCookingTasksWithCustomOrder() {
+        DatabaseHelper.clearChefsAndTasks();
+        DatabaseHelper.createTaskAssignedToChefAndCustomer();
+    }
+
+
+    @Then("the output should include {string}")
+    public void theOutputShouldInclude(String expected) {
+        String output = TestContext.get("pendingTasksOutput", String.class);
+        assertTrue(output.contains(expected));
+    }
+
+
+
+    @Given("there are pending cooking tasks with a regular order")
+    public void thereArePendingCookingTasksWithRegularOrder() {
+        DatabaseHelper.clearChefsAndTasks();
+        int chefId = DatabaseHelper.addChef("Chef Regular", "BBQ", 0);
+        int taskId = DatabaseHelper.addPendingTask();
+
+        // Now, add a minimal order and link it to the task
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            PreparedStatement insertCustomer = conn.prepareStatement(
+                    "INSERT INTO Users (name, email, password, role) VALUES ('RegularOrderCustomer', ?, 'pass', 'customer') RETURNING user_id"
+            );
+            insertCustomer.setString(1, "regorder" + UUID.randomUUID().toString().substring(0,6) + "@test.com");
+            ResultSet rs = insertCustomer.executeQuery();
+            int customerId = -1;
+            if (rs.next()) customerId = rs.getInt("user_id");
+
+            PreparedStatement insertOrder = conn.prepareStatement(
+                    "INSERT INTO Orders (customer_id) VALUES (?) RETURNING order_id"
+            );
+            insertOrder.setInt(1, customerId);
+            ResultSet orderRs = insertOrder.executeQuery();
+            int orderId = -1;
+            if (orderRs.next()) orderId = orderRs.getInt("order_id");
+
+            // Link order_id to task
+            PreparedStatement updateTask = conn.prepareStatement(
+                    "UPDATE Tasks SET order_id=? WHERE task_id=?"
+            );
+            updateTask.setInt(1, orderId);
+            updateTask.setInt(2, taskId);
+            updateTask.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            fail("Could not set up regular order for task");
+        }
+    }
+
+
+    @Given("there are pending cooking tasks with no linked orders")
+    public void thereArePendingCookingTasksWithNoLinkedOrders() {
+        DatabaseHelper.clearChefsAndTasks();
+        DatabaseHelper.addChef("Chef NoLink", "Soup", 0);
+        DatabaseHelper.addPendingTask();
+    }
+
+
+    @Given("there are pending cooking tasks with a custom order having substitution")
+    public void thereArePendingCookingTasksWithCustomOrderHavingSubstitution() {
+        DatabaseHelper.clearChefsAndTasks();
+        DatabaseHelper.createTaskAssignedToChefAndCustomer();
+        // Now, add a substitution to the custom order
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            // Get the latest custom_order_id
+            ResultSet rs = conn.prepareStatement(
+                    "SELECT custom_order_id FROM Customized_Orders ORDER BY custom_order_id DESC LIMIT 1"
+            ).executeQuery();
+            int customOrderId = -1;
+            if (rs.next()) customOrderId = rs.getInt("custom_order_id");
+            // Insert ingredient and link with substitution
+            PreparedStatement insertIng = conn.prepareStatement(
+                    "INSERT INTO Ingredients (name, unit) VALUES ('Special Ingredient', 'g') RETURNING ingredient_id"
+            );
+            ResultSet ingRs = insertIng.executeQuery();
+            int ingredientId = -1;
+            if (ingRs.next()) ingredientId = ingRs.getInt("ingredient_id");
+            PreparedStatement insertCOI = conn.prepareStatement(
+                    "INSERT INTO Customized_Order_Ingredients (custom_order_id, ingredient_id, quantity, substitution) VALUES (?, ?, 42, 'Rice Flour')"
+            );
+            insertCOI.setInt(1, customOrderId);
+            insertCOI.setInt(2, ingredientId);
+            insertCOI.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            fail("Could not add substitution ingredient");
+        }
+    }
+
+
+
+
+    @Given("there are no pending tasks in the kitchen")
+    public void thereAreNoPendingTasksInTheKitchen() {
+        DatabaseHelper.clearChefsAndTasks();
+    }
+    @Then("the output should not include {string}")
+    public void theOutputShouldNotInclude(String unexpected) {
+        String output = TestContext.get("pendingTasksOutput", String.class);
+        assertFalse(output.contains(unexpected));
+    }
 
 
 
