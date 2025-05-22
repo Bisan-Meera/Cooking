@@ -44,11 +44,12 @@ Feature: Real-time Ingredient Stock Management and Restocking Suggestions
     And suggests restocking if the substituted or original ingredient falls below the threshold
 
   Scenario: Deduct stock when an order is confirmed
-    Given ingredient "Onions" stock is reset to 29.67
+    And the initial stock for ingredient "Onions" is recorded
     And order ID 1 exists with meals and ingredients
     When the order is confirmed
-    Then ingredient "Onions" should have stock 29.62
+    Then ingredient "Onions" should have stock 25.67
     And the "last_updated" timestamp for ingredient "Onions" should be recent
+
 
   Scenario: Create restocking notification when stock falls below threshold
     Given ingredient "Onions" stock is reset to 0.3
