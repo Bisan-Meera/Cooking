@@ -86,3 +86,31 @@ Feature: Scheduling and Task Assignment
     When the kitchen manager requests the task count for Chef Luca
     Then the system should return the number of active tasks assigned to Chef Luca
 
+
+  Scenario: Database failure when assigning a task to the least loaded chef
+    Given the database is unavailable or returns an error
+    When the kitchen manager tries to assign a new cooking task
+    Then the system should handle the error gracefully and indicate assignment failed
+
+  Scenario: Database failure when assigning a task to a chef with required expertise
+    Given the database is unavailable or returns an error
+    And a cooking task requires "Sushi" cuisine expertise
+    When the kitchen manager assigns the task
+    Then the system should handle the error gracefully and indicate assignment failed
+
+  Scenario: No chef with the required expertise is available
+    Given the system has chefs with different workloads and expertise levels
+    And a cooking task requires "Lebanese" cuisine expertise
+    When the kitchen manager assigns the task
+    Then the system should indicate that no chef with the required expertise is available
+
+  Scenario: Getting task count for non-existent chef returns zero
+    Given there are no chefs available in the system
+    When the kitchen manager requests the task count for Chef Luca
+    Then the system should return the number of active tasks assigned to Chef Luca
+
+  Scenario: Get chef expertise for non-existent chef returns null
+    Given there are no chefs available in the system
+    When the kitchen manager requests the expertise for chef id 9999
+    Then the system should receive no expertise
+

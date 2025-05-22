@@ -216,4 +216,19 @@ public class DatabaseHelper {
         }
         return -1;
     }
+
+    public static int createUnlinkedTask(int chefId) {
+        try (Connection conn = getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO Tasks (assigned_to, task_type, status) VALUES (?, 'cooking', 'active') RETURNING task_id"
+            );
+            ps.setInt(1, chefId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt("task_id");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
 }

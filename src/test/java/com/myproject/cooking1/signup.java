@@ -2,6 +2,7 @@ package com.myproject.cooking1;
 
 import com.myproject.cooking1.entities.TestContext;
 import com.myproject.cooking1.entities.User;
+import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -15,6 +16,48 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 public class signup {
+
+    @After
+    public void cleanUpTestUsers() {
+        try (Connection conn = DBConnection.getConnection()) {
+            for (String email : usedEmails) {
+                // Get user_id for this email
+                PreparedStatement userStmt = conn.prepareStatement("SELECT user_id FROM Users WHERE email = ?");
+                userStmt.setString(1, email);
+                ResultSet userRs = userStmt.executeQuery();
+                if (userRs.next()) {
+                    int userId = userRs.getInt("user_id");
+                    // NEVER delete user_id=1 or known production/demo users
+                    if (userId == 1 || email.equalsIgnoreCase("lyllahassan@example.com")) {
+                        System.out.println("Skipping deletion for demo/shared user: " + email);
+                        continue;
+                    }
+                    // Only delete users whose emails match your test pattern
+                    if (!email.startsWith("test") && !email.contains("+test")) {
+                        System.out.println("Skipping non-test user: " + email);
+                        continue;
+                    }
+                    // Delete dependent invoices if any
+                    PreparedStatement invStmt = conn.prepareStatement("DELETE FROM Invoices WHERE customer_id = ?");
+                    invStmt.setInt(1, userId);
+                    invStmt.executeUpdate();
+
+                    // Now safe to delete the user
+                    PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM Users WHERE user_id = ?");
+                    deleteStmt.setInt(1, userId);
+                    deleteStmt.executeUpdate();
+
+                    System.out.println("Deleted test user: " + email + ", user_id=" + userId);
+                }
+            }
+            usedEmails.clear();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     private String lastMessage;
     private static final Set<String> usedEmails = new HashSet<>();
 
@@ -73,6 +116,8 @@ public class signup {
 
             User user = new User(0, name, email, password, role, null);
             User.createUser(user, conn);
+            System.out.println("Created user: " + user.getEmail());
+
             usedEmails.add(email.toLowerCase());
             lastMessage = "Registration successful";
             TestContext.set("lastMessage", lastMessage);
@@ -103,19 +148,6 @@ public class signup {
     @Then("the system should create a new user and show {string}")
     public void theSystemShouldCreateANewUserAndShow(String expectedMessage) {
         assertEquals(expectedMessage, lastMessage);
-
-        // 🧹 If the registration was successful, delete the test user
-        if ("Registration successful".equals(lastMessage)) {
-            try (Connection conn = DBConnection.getConnection()) {
-                String email = TestContext.get("email", String.class);
-                PreparedStatement deleteStmt = conn.prepareStatement("DELETE FROM Users WHERE email = ?");
-                deleteStmt.setString(1, email);
-                deleteStmt.executeUpdate();
-                usedEmails.remove(email.toLowerCase()); // optional if needed
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 
@@ -123,5 +155,22 @@ public class signup {
     public void theSignupResultShouldBe(String expectedMessage) {
         String actual = TestContext.get("lastMessage", String.class);
         assertEquals(expectedMessage, actual);
+    }
+    @Then("the user {string} should exist in the database")
+    public void theUserShouldExistInTheDatabase(String email) {
+        try (Connection conn = com.myproject.cooking1.DBConnection.getConnection()) {
+            // You may want to make a getUserByEmail static method, but for now:
+            String sql = "SELECT * FROM Users WHERE email = ?";
+            try (java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, email);
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    org.junit.Assert.assertTrue("User with email not found: " + email, rs.next());
+                    // Optional: check name/role as well
+                    // assertEquals("New User", rs.getString("name"));
+                }
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Database check failed: " + e.getMessage(), e);
+        }
     }
 }

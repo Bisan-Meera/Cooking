@@ -23,12 +23,22 @@ public class IngredientStockService {
                 int ingredientId = rs.getInt("ingredient_id");
                 double required = rs.getDouble("total_required");
 
+
+                if (ingredientId == 17) { // replace 17 with the real Onions ID if needed
+                    System.out.println("🍽 [DEBUG] Onions deduction required=" + required);
+                }
+
+                System.out.println("Deducting ingredient_id: " + ingredientId + " amount: " + required);                System.out.println("Updating ingredient ID: " + ingredientId + ", will deduct: " + required);
+
                 PreparedStatement update = conn.prepareStatement(
                         "UPDATE ingredients SET stock_quantity = stock_quantity - ?, last_updated = CURRENT_TIMESTAMP WHERE ingredient_id = ?"
                 );
                 update.setDouble(1, required);
                 update.setInt(2, ingredientId);
                 update.executeUpdate();
+                int rowsAffected = update.executeUpdate();
+                System.out.println("Deduction executed for ingredient ID: " + ingredientId + " (rows affected: " + rowsAffected + ")");
+
 
                 // 🚨 Check stock threshold after deduction and notify if needed
                 PreparedStatement check = conn.prepareStatement(

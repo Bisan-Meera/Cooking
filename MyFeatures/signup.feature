@@ -41,3 +41,10 @@ Feature: Sign Up
       | admin@control.com  | admin          |           |
       | sam@kitchen.com    | kitchen_staff  |           |
       | user@domain.com    | manager        |           |
+
+  Scenario: User signs up successfully
+    Given the Users table is available
+    And the email "newuser@example.com" is not already registered
+    When the user signs up with name "New User", email "newuser@example.com", password "testpass", role "customer", and expertise "Vegan"
+    Then the system should create a new user and show "Registration successful"
+    And the user "newuser@example.com" should exist in the database
