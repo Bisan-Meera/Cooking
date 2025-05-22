@@ -173,4 +173,54 @@ public class signup {
             throw new AssertionError("Database check failed: " + e.getMessage(), e);
         }
     }
+
+    User testUser;
+
+    @Given("a new user object is created with basic info")
+    public void aNewUserObjectIsCreatedWithBasicInfo() {
+        testUser = new User(999, "Temp", "temp@test.com", "1234", "customer", "None");
+    }
+
+    @When("we modify the user's name, email, password, role, and expertise")
+    public void weModifyTheUserFields() {
+        testUser.setName("Updated Name");
+        testUser.setEmail("updated@test.com");
+        testUser.setPassword("newpass");
+        testUser.setRole("customer");
+        testUser.setExpertise("Vegetarian");
+    }
+
+    @Then("the user fields should reflect the updated values")
+    public void theUserFieldsShouldReflectTheUpdatedValues() {
+        assertEquals("Updated Name", testUser.getName());
+        assertEquals("updated@test.com", testUser.getEmail());
+        assertEquals("newpass", testUser.getPassword());
+        assertEquals("customer", testUser.getRole());
+        assertEquals("Vegetarian", testUser.getExpertise());
+    }
+
+    @Given("a new user object with role {string}")
+    public void aNewUserObjectWithRole(String role) {
+        testUser = new User(123, "Role Test", "role@test.com", "pass", role, null);
+    }
+
+    @Then("isCustomer should return true and others should be false")
+    public void isCustomerShouldReturnTrueAndOthersFalse() {
+        assert testUser.isCustomer();
+        assert !testUser.isAdmin();
+        assert !testUser.isChef();
+        assert !testUser.isKitchenStaff();
+    }
+
+    @When("a user is manually created via createUser method")
+    public void aUserIsManuallyCreatedViaCreateUser() {
+        try (Connection conn = DBConnection.getConnection()) {
+            User user = new User(0, "Manual User", "manualuser@test.com", "man123", "customer", null);
+            User.createUser(user, conn);
+            usedEmails.add(user.getEmail().toLowerCase());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

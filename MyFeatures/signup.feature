@@ -48,3 +48,17 @@ Feature: Sign Up
     When the user signs up with name "New User", email "newuser@example.com", password "testpass", role "customer", and expertise "Vegan"
     Then the system should create a new user and show "Registration successful"
     And the user "newuser@example.com" should exist in the database
+
+  Scenario: Modify user fields after creation
+    Given a new user object is created with basic info
+    When we modify the user's name, email, password, role, and expertise
+    Then the user fields should reflect the updated values
+
+  Scenario: Verify role-check methods on a user
+    Given a new user object with role "customer"
+    Then isCustomer should return true and others should be false
+
+  Scenario: Manually create user via createUser method
+    Given the email "manualuser@test.com" is not already registered
+    When a user is manually created via createUser method
+    Then the user "manualuser@test.com" should exist in the database

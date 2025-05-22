@@ -63,3 +63,26 @@ Feature:Login
       | UserID | Name            |
       | 2      | Mohamed Said    |
       | 5      | Admin Sara      |
+
+  Scenario: Retrieve user by ID
+    Given the user with ID 3 exists
+    When the system fetches user by ID 3
+    Then the fetched user name should be "Chef Yasser"
+
+  Scenario: Retrieve user expertise
+    Given the user with ID 3 exists
+    When the system fetches user by ID 3
+    Then the user expertise should be "French"
+
+  Scenario: Create a new user into the database
+    When a new user "Test User" is created
+    Then the system should be able to fetch them by ID
+
+  Scenario: Fetch all user IDs with role chef
+    When the system fetches all user IDs with role "chef"
+    Then the result should include user ID 3
+
+  Scenario: Verify role methods of logged-in user
+    Given user with user_id 3 and name "Chef Yasser" is not logged in
+    When they enter valid credentials: user_id 3 and name "Chef Yasser"
+    Then the system should confirm the user is a chef
