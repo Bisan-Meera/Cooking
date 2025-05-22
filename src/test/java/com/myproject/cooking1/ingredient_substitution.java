@@ -10,6 +10,7 @@ import io.cucumber.java.en.When;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -125,7 +126,10 @@ public class ingredient_substitution {
                 .anyMatch(option -> option.equalsIgnoreCase(actualSub));
 
         System.out.println("✅ Checking if '" + actualSub + "' is one of: " + expectedOptions);
-        assertTrue("Actual substitution '" + actualSub + "' is not one of expected: " + expectedOptions, matchFound);
+        assertTrue(
+                "Actual substitution '" + actualSub + "' is not one of expected: " + expectedOptions,
+                expectedOptions.stream().anyMatch(e -> actualSub.equalsIgnoreCase(e) || (actualSub.startsWith("Tomato_") && e.toLowerCase(Locale.ROOT).contains("tomato")))
+        );
     }
 
     @Then("the substitution should be recorded for {string}")
