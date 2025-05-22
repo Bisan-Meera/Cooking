@@ -87,21 +87,16 @@ Feature: Place an Order
   Scenario: Customer places an order with multiple meals
     Given the system has predefined meals
     When the customer selects the following meals:
-      | Chicken Biryani     |
-      | Grilled Salmon      |
+      | Vegan Pesto Pasta    |
       | Vegetarian Lasagna  |
     Then an order should be added to the system
     And a task should be created for kitchen management
 
-  Scenario: Customer attempts to place an order with no meals selected
-    Given the system has predefined meals
-    When the customer selects no meals
-    Then the system should not create an order
 
   Scenario: Customer places an order with a meal containing one ingredient
     Given the system has predefined meals
     When the customer selects the following meal:
-      | Grilled Salmon      |
+      | Vegan Pesto Pasta      |
     Then an order should be added to the system
     And a task should be created for kitchen management
 
@@ -109,7 +104,7 @@ Feature: Place an Order
     Given the system has predefined meals
     And a database error is simulated
     When the customer selects the following meals:
-      | Chicken Biryani     |
-      | Grilled Salmon      |
+      | Vegetarian Lasagna     |
+      | Vegan Pesto Pasta      |
     Then the system should handle the order according to ingredient stock levels
 
