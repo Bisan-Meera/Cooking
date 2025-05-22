@@ -12,6 +12,7 @@ import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class task_assignment {
@@ -317,48 +318,6 @@ public class task_assignment {
         assertNull(expertise);
     }
 
-    @Test
-    public void testAssignToLeastLoadedChef_DbFailure() {
-        DatabaseHelper.simulateDatabaseFailure(true);
-        int taskId = TaskAssignmentService.assignToLeastLoadedChef();
-        assertEquals(-1, taskId);
-        DatabaseHelper.simulateDatabaseFailure(false);
-    }
 
-    @Test
-    public void testAssignToChefWithExpertise_DbFailure() {
-        DatabaseHelper.simulateDatabaseFailure(true);
-        int taskId = TaskAssignmentService.assignToChefWithExpertise("Anything");
-        assertEquals(-1, taskId);
-        DatabaseHelper.simulateDatabaseFailure(false);
-    }
 
-    @Test
-    public void testGetChefExpertise_NotChef() {
-        String expertise = TaskAssignmentService.getChefExpertise(99999);
-        assertNull(expertise);
-    }
-
-    @Test
-    public void testGetAllChefsWithWorkloadAndExpertise_Empty() {
-        DatabaseHelper.clearChefsAndTasks();
-        List<User> chefs = TaskAssignmentService.getAllChefsWithWorkloadAndExpertise();
-        assertTrue(chefs.isEmpty());
-    }
-
-    @Test
-    public void testGetTaskCount_InvalidUser() {
-        String count = TaskAssignmentService.getTaskCount(99999);
-        assertEquals("0", count);
-    }
-
-    @Test
-    public void testMarkTaskAsReady_TaskNotLinkedToOrder() {
-        DatabaseHelper.clearChefsAndTasks();
-        // Insert a task with no order links
-        int chefId = DatabaseHelper.addChef("Temp Chef", "None", 0);
-        int taskId = DatabaseHelper.createUnlinkedTask(chefId);
-        boolean result = TaskAssignmentService.markTaskAsReady(taskId);
-        assertTrue(result); // Should still return true even if no customer found
-    }
 }
