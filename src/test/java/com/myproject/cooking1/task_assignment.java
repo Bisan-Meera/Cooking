@@ -571,6 +571,35 @@ public class task_assignment {
         }
     }
 
+    @When("an unlinked cooking task is created for that chef")
+    public void createUnlinkedCookingTaskForChef() {
+        Integer chefId = TestContext.get("chefId", Integer.class);
+        int taskId = DatabaseHelper.createUnlinkedTask(chefId);
+        TestContext.set("createdUnlinkedTaskId", taskId);
+    }
+
+    @Then("the unlinked task should exist in the database")
+    public void unlinkedTaskShouldExistInDatabase() {
+        Integer taskId = TestContext.get("createdUnlinkedTaskId", Integer.class);
+        assertTrue(taskId > 0);
+
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "SELECT assigned_to, order_id, custom_order_id FROM Tasks WHERE task_id = ?"
+            );
+            ps.setInt(1, taskId);
+            ResultSet rs = ps.executeQuery();
+            assertTrue(rs.next());
+            // Confirm the task is assigned to chef and is NOT linked to an order
+            assertTrue(rs.getInt("assigned_to") > 0);
+            assertEquals(0, rs.getInt("order_id"));
+            assertEquals(0, rs.getInt("custom_order_id"));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            fail("Database error while verifying unlinked task: " + e.getMessage());
+        }
+    }
+
 
 
 

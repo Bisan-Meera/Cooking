@@ -287,5 +287,53 @@ public class CustomerProfileAndPrefrences {
     }
 
 
+    @When("they try to save preferences and a blank error occurs")
+    public void theyTryToSavePreferencesAndABlankErrorOccurs() {
+        ProfileForm form = new ProfileForm() {
+            @Override
+            public String submit() {
+                try {
+                    // Simulate blank message exception
+                    throw new RuntimeException("");
+                } catch (Exception e) {
+                    String msg = e.getMessage();
+                    if (msg != null && !msg.isBlank()) {
+                        return msg;
+                    }
+                    return "Unable to save preferences due to system error";
+                }
+            }
+        };
+        form.setUserId(currentUserId);
+        form.setPreferences("Keto");
+        form.setAllergy("Eggs");
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+    @When("they try to save preferences and a null error occurs")
+    public void theyTryToSavePreferencesAndANullErrorOccurs() {
+        ProfileForm form = new ProfileForm() {
+            @Override
+            public String submit() {
+                try {
+                    // Simulate null message exception
+                    throw new RuntimeException((String) null);
+                } catch (Exception e) {
+                    String msg = e.getMessage();
+                    if (msg != null && !msg.isBlank()) {
+                        return msg;
+                    }
+                    return "Unable to save preferences due to system error";
+                }
+            }
+        };
+        form.setUserId(currentUserId);
+        form.setPreferences("Low Carb");
+        form.setAllergy("Milk");
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+
 
 }

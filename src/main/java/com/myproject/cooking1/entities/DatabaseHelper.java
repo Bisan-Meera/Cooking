@@ -112,9 +112,7 @@ public class DatabaseHelper {
         }
     }
 
-    public static void addChefWithTasks(String name, String expertise, int activeTasks) {
-        addChef(name, expertise, activeTasks);
-    }
+
 
     public static void createTaskAssignedToChefAndCustomer() {
         try (Connection conn = getConnection()) {
@@ -174,16 +172,7 @@ public class DatabaseHelper {
         return -1;
     }
 
-    public static void clearChefsTasksOnly() {
-        try (Connection conn = getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "DELETE FROM Tasks WHERE assigned_to IN (SELECT user_id FROM Users WHERE role = 'chef')"
-            );
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+
 
     public static void createSpecificTaskAndChef() {
         clearChefsAndTasks();

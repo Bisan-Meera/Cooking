@@ -177,3 +177,8 @@ Feature: Scheduling and Task Assignment
     Given there is a pending cooking task in the kitchen
     When the kitchen manager attempts to assign the task to an invalid chef
     Then the task remains unassigned in the database
+
+  Scenario: Create an unlinked cooking task for a chef
+    Given there is a chef available in the system
+    When an unlinked cooking task is created for that chef
+    Then the unlinked task should exist in the database
