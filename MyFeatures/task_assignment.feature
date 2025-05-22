@@ -182,3 +182,18 @@ Feature: Scheduling and Task Assignment
     Given there is a chef available in the system
     When an unlinked cooking task is created for that chef
     Then the unlinked task should exist in the database
+
+  Scenario: View pending tasks when no pending tasks exist
+    Given there are no chefs available in the system
+    When the kitchen manager requests to view all pending tasks
+    Then the system should indicate no pending tasks clearly
+
+  Scenario: DB failure when viewing pending tasks
+    Given the database is unavailable or returns an error
+    When the kitchen manager requests to view all pending tasks
+    Then the system should handle the error gracefully and indicate assignment failed
+
+  Scenario: Database failure when getting task count for a chef
+    Given the database is unavailable or returns an error
+    When the kitchen manager requests the task count for a chef
+    Then the system should handle the error gracefully and return "0"

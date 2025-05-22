@@ -24,24 +24,30 @@ public class ProfileForm {
     }
 
     public String submit() {
+        // Cover: both empty/null
         if ((preferences == null || preferences.trim().isEmpty()) &&
                 (allergy == null || allergy.trim().isEmpty())) {
             return "Preferences cannot be empty";
         }
+        // Cover: force DB error simulation
         if (forceDbError) {
             return "Unable to save preferences due to system error";
         }
         try {
-            service.updatePreferences(userId, preferences != null ? preferences : "", allergy != null ? allergy : "");
+            service.updatePreferences(
+                    userId,
+                    preferences != null ? preferences.trim() : "",
+                    allergy != null ? allergy.trim() : ""
+            );
             return "Preferences saved successfully";
         } catch (Exception e) {
             String msg = e.getMessage();
+            // Cover: exception with message
             if (msg != null && !msg.isBlank()) {
                 return msg;
             }
+            // Cover: exception with no message or blank
             return "Unable to save preferences due to system error";
         }
     }
-
-
 }

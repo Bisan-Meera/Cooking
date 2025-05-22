@@ -600,6 +600,21 @@ public class task_assignment {
         }
     }
 
+    @When("the kitchen manager requests the task count for a chef")
+    public void kitchenManagerRequestsTaskCount() {
+        // Use TestContext to hold the result for validation
+        String taskCount = TaskAssignmentService.getTaskCount(1); // Test with chef ID 1 (can be any valid ID)
+        TestContext.set("taskCountResult", taskCount); // Store result in context
+    }
+
+    @Then("the system should handle the error gracefully and return \"0\"")
+    public void systemShouldHandleErrorGracefully() {
+        // Retrieve result stored in TestContext
+        String taskCount = TestContext.get("taskCountResult", String.class);
+        // Assert that the task count is returned as "0" when DB failure occurs
+        assertEquals("0", taskCount);
+        DatabaseHelper.simulateDatabaseFailure(false); // Reset DB failure flag after test
+    }
 
 
 

@@ -13,6 +13,7 @@ Feature: Suggest Ingredient Substitutions Based on Dietary Restrictions or Unava
 
   Scenario: Suggest substitution for restricted ingredient
     Given the ingredient "Beef" is restricted for the customer
+    And the ingredient "Beef" is in low stock
     When the customer selects "Beef" for a custom meal
     Then the system should suggest one of the following:
       | Tofu             |
