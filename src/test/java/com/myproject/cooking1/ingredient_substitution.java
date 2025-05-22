@@ -7,6 +7,8 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -147,6 +149,17 @@ public class ingredient_substitution {
                 expectedSub.equalsIgnoreCase(actualSub));
     }
 
+    @Given("the ingredient {string} is in low stock")
+    public void theIngredientHasLowStock(String ingredientName) throws SQLException {
+        try (Connection conn = DBConnection.getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "UPDATE Ingredients SET stock_quantity = 0.0 WHERE LOWER(name) = LOWER(?)"
+            );
+            ps.setString(1, ingredientName);
+            ps.executeUpdate();
+            System.out.println("🔁 Stock for " + ingredientName + " set to 0 for substitution testing.");
+        }
+    }
 
 
 }
