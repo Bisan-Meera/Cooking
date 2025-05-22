@@ -470,13 +470,17 @@ public class task_assignment {
 
     @Given("there is a chef available in the system")
     public void thereIsChefAvailableInTheSystem() {
-        // (full method shown in your pasted code above, inserts a test chef and puts chefId in TestContext)
+        int chefId = DatabaseHelper.addChef("Test Chef", "General", 0);
+        TestContext.set("chefId", chefId); // Make sure this line exists
     }
+
 
     @Given("there is a pending cooking task in the kitchen")
     public void thereIsPendingCookingTaskInTheKitchen() {
-        // (full method shown in your pasted code above, inserts a pending task and puts taskId in TestContext)
+        int taskId = DatabaseHelper.addPendingTask(); // This should return the new task's ID!
+        TestContext.set("taskId", taskId); // Make sure this line exists
     }
+
 
     @When("the kitchen manager assigns the task to the chef")
     public void kitchenManagerAssignsTaskToTheChef() {

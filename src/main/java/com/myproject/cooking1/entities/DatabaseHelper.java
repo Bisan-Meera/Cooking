@@ -230,5 +230,20 @@ public class DatabaseHelper {
         }
         return -1;
     }
+    public static int addPendingTask() {
+        try (Connection conn = getConnection()) {
+            PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO Tasks (task_type, status) VALUES ('cooking', 'pending') RETURNING task_id"
+            );
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("task_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
 
 }
