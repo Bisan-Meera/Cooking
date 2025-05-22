@@ -28,16 +28,20 @@ public class ProfileForm {
                 (allergy == null || allergy.trim().isEmpty())) {
             return "Preferences cannot be empty";
         }
-
         if (forceDbError) {
             return "Unable to save preferences due to system error";
         }
-
         try {
             service.updatePreferences(userId, preferences != null ? preferences : "", allergy != null ? allergy : "");
             return "Preferences saved successfully";
         } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg != null && !msg.isBlank()) {
+                return msg;
+            }
             return "Unable to save preferences due to system error";
         }
     }
+
+
 }

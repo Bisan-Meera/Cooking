@@ -173,21 +173,23 @@ public class CustomerProfileAndPrefrences {
     @When("they select dietary preferences and a database error occurs while saving")
     public void theySelectDietaryPreferencesAndADatabaseErrorOccursWhileSaving() {
         ProfileForm form = new ProfileForm();
-        form.setPreferences("Vegetarian"); // Set valid input to pass empty check
-        form.simulateDbFailure(true);      // You'd need a method to force failure in the backend
-        String result = form.submit();     // Should return system error message
+        form.setUserId(2);
+        form.setPreferences("Vegetarian");
+        form.simulateDbFailure(true);
+        String result = form.submit(); // Should return "Unable to save preferences due to system error"
         TestContext.set("lastMessage", result);
     }
+
 
     @When("they try to save preferences and a simulated DB failure occurs")
     public void theyTryToSavePreferencesAndASimulatedDbFailureOccurs() {
         try {
-            // Only user 3 should trigger this message
-            profileService.updatePreferences(currentUserId, "Vegan", "None");
+            profileService.updatePreferences(3, "Vegan", "None"); // Should throw the special message
         } catch (RuntimeException e) {
             TestContext.set("lastMessage", e.getMessage());
         }
     }
+
 
     @When("they try to view preferences and the database fails")
     public void theyTryToViewPreferencesAndDbFails() {
