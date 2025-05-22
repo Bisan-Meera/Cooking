@@ -122,3 +122,58 @@ Feature: Scheduling and Task Assignment
     Given Chef Maria is logged in
     When she requests to print her active tasks
     Then the system should display her active cooking tasks in the console
+
+  Scenario: Mark a task as ready when task not linked to customer order
+    Given the system has chefs with different workloads and expertise levels
+    And there are pending cooking tasks in the kitchen
+    When the kitchen manager assigns a new cooking task
+    When the chef marks the task as ready (minimal)
+    Then the task should be marked ready without errors
+
+  Scenario: View pending tasks when there are no pending tasks
+    Given there are no chefs available in the system
+    When the kitchen manager requests to view all pending tasks
+    Then the system should indicate no pending tasks clearly
+
+  Scenario: Chef views active tasks when no active tasks assigned
+    Given the system has chefs with different workloads and expertise levels
+    And Chef John already has 0 active tasks
+    When Chef John requests to view his active tasks
+    Then the system should indicate no active tasks clearly
+
+  Scenario: Get all chefs with workload and expertise returns empty list when no chefs exist
+    Given there are no chefs available in the system
+    When the kitchen manager requests the list of chefs with workload and expertise
+    Then the system should receive an empty list
+
+  Scenario: Assignment fails when database insert for new task fails
+    Given the database is unavailable or returns an error
+    When the kitchen manager assigns a new cooking task
+    Then the system should handle the error gracefully and indicate assignment failed
+
+  Scenario: View pending tasks with regular and custom orders
+    Given there are pending cooking tasks with regular and custom orders
+    When the kitchen manager requests to view all pending tasks
+    Then all pending tasks and their linked order or meal details should be displayed correctly
+
+  Scenario: View pending tasks with a custom order having no ingredients
+    Given the system has chefs with different workloads and expertise levels
+    And there are pending cooking tasks with a custom order having no ingredients
+    When the kitchen manager requests to view all pending tasks
+    Then all pending tasks and their linked order details should be displayed with no ingredient details for the custom order
+
+  Scenario: Assign a cooking task to a specific chef
+    Given there is a chef available in the system
+    And there is a pending cooking task in the kitchen
+    When the kitchen manager assigns the task to the chef
+    Then the task should be successfully assigned to the chef
+
+  Scenario: Attempt to assign an invalid cooking task to a chef
+    Given there is a chef available in the system
+    When the kitchen manager attempts to assign an invalid task to the chef
+    Then the task assignment should fail
+
+  Scenario: Attempt to assign a cooking task to an invalid chef
+    Given there is a pending cooking task in the kitchen
+    When the kitchen manager attempts to assign the task to an invalid chef
+    Then the task remains unassigned in the database

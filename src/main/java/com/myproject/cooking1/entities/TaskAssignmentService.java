@@ -1,21 +1,16 @@
 package com.myproject.cooking1.entities;
 
 import com.myproject.cooking1.DBConnection;
-
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TaskAssignmentService {
-
 
     public static int assignToLeastLoadedChef() {
         try (Connection conn = DatabaseHelper.getConnection()) {
             int chefId = findLeastLoadedChef();
             if (chefId == -1) return -1;
-
             return createTaskForChef(conn, chefId);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -45,7 +40,7 @@ public class TaskAssignmentService {
         return -1;
     }
 
-    private static int createTaskForChef(Connection conn, int chefId) throws SQLException {
+    public static int createTaskForChef(Connection conn, int chefId) throws SQLException {
         PreparedStatement assign = conn.prepareStatement(
                 "INSERT INTO Tasks (assigned_to, task_type, status) VALUES (?, 'cooking', 'active') RETURNING task_id"
         );
@@ -60,49 +55,104 @@ public class TaskAssignmentService {
     }
 
     public static void showPendingTasksWithDetails() {
+        System.out.print(capturePendingTasksWithDetails());
+    }
+
+    public static void showActiveTasksForChef(int chefId) {
+        System.out.print(captureActiveTasksForChef(chefId));
+    }
+
+    // --- Helper for test output ---
+
+    public static String capturePendingTasksWithDetails() {
+        StringBuilder sb = new StringBuilder();
         try (Connection conn = DatabaseHelper.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(
                     "SELECT task_id, order_id, custom_order_id FROM Tasks WHERE assigned_to IS NULL OR assigned_to = 0"
             );
             ResultSet rs = stmt.executeQuery();
 
-            System.out.println("Pending Tasks with Details:");
+            sb.append("Pending Tasks with Details:\n");
             while (rs.next()) {
                 int taskId = rs.getInt("task_id");
                 int orderId = rs.getInt("order_id");
                 int customOrderId = rs.getInt("custom_order_id");
-                System.out.println(" - Task ID: " + taskId);
+                sb.append(" - Task ID: ").append(taskId).append("\n");
 
                 if (customOrderId != 0) {
-                    System.out.println("   → Linked Custom Order ID: " + customOrderId);
-                    showCustomOrderMeals(conn, customOrderId);
+                    sb.append("   → Linked Custom Order ID: ").append(customOrderId).append("\n");
+                    sb.append(showCustomOrderMealsString(conn, customOrderId));
                 } else if (orderId != 0) {
-                    System.out.println("   → Linked Regular Order ID: " + orderId);
-                    showRegularOrderMeals(conn, orderId);
+                    sb.append("   → Linked Regular Order ID: ").append(orderId).append("\n");
+                    sb.append(showRegularOrderMealsString(conn, orderId));
                 } else {
-                    System.out.println("   → No linked order information.");
+                    sb.append("   → No linked order information.\n");
                 }
-
-                System.out.println();
+                sb.append("\n");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            sb.append("❌ Error: ").append(e.getMessage());
         }
+        return sb.toString();
     }
 
+    public static String captureActiveTasksForChef(int chefId) {
+        StringBuilder sb = new StringBuilder();
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            String query =
+                    "SELECT t.task_id, " +
+                            "CASE " +
+                            "   WHEN co.notes IS NOT NULL THEN 'Custom: ' || co.notes " +
+                            "   WHEN m.name IS NOT NULL THEN 'Meal: ' || m.name " +
+                            "   ELSE 'General cooking task' " +
+                            "END AS description " +
+                            "FROM Tasks t " +
+                            "LEFT JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id " +
+                            "LEFT JOIN Orders o ON t.order_id = o.order_id " +
+                            "LEFT JOIN Order_Items oi ON o.order_id = oi.order_id " +
+                            "LEFT JOIN Meals m ON oi.meal_id = m.meal_id " +
+                            "WHERE t.assigned_to = ? " +
+                            "  AND t.status = 'active' " +
+                            "  AND t.task_type = 'cooking' " +
+                            "GROUP BY t.task_id, co.notes, m.name " +
+                            "ORDER BY t.task_id";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setInt(1, chefId);
+            ResultSet rs = ps.executeQuery();
 
-    private static void showRegularOrderMeals(Connection conn, int orderId) throws SQLException {
+            sb.append("\n🔧 Your Active Tasks:\n");
+            boolean found = false;
+            while (rs.next()) {
+                int taskId = rs.getInt("task_id");
+                String desc = rs.getString("description");
+                sb.append(" - Task ID: ").append(taskId).append(" | ").append(desc).append("\n");
+                found = true;
+            }
+            if (!found) {
+                sb.append("✅ No active cooking tasks assigned to you.\n");
+            }
+        } catch (SQLException e) {
+            sb.append("❌ Error loading tasks.\n");
+        }
+        return sb.toString();
+    }
+
+    private static String showRegularOrderMealsString(Connection conn, int orderId) throws SQLException {
+        StringBuilder sb = new StringBuilder();
         PreparedStatement stmt = conn.prepareStatement(
                 "SELECT m.name, oi.quantity FROM Order_Items oi JOIN Meals m ON oi.meal_id = m.meal_id WHERE oi.order_id = ?"
         );
         stmt.setInt(1, orderId);
         ResultSet rs = stmt.executeQuery();
         while (rs.next()) {
-            System.out.println("     • Meal: " + rs.getString("name") + " × " + rs.getInt("quantity"));
+            sb.append("     • Meal: ").append(rs.getString("name"))
+                    .append(" × ").append(rs.getInt("quantity")).append("\n");
         }
+        return sb.toString();
     }
 
-    public static void showCustomOrderMeals(Connection conn, int customOrderId) throws SQLException {
+    private static String showCustomOrderMealsString(Connection conn, int customOrderId) throws SQLException {
+        StringBuilder sb = new StringBuilder();
         PreparedStatement stmt = conn.prepareStatement(
                 "SELECT i.name, coi.quantity, coi.substitution FROM Customized_Order_Ingredients coi " +
                         "JOIN Ingredients i ON coi.ingredient_id = i.ingredient_id WHERE coi.custom_order_id = ?"
@@ -112,9 +162,13 @@ public class TaskAssignmentService {
         while (rs.next()) {
             String substitution = rs.getString("substitution");
             String note = (substitution != null && !substitution.isEmpty()) ? " (sub: " + substitution + ")" : "";
-            System.out.println("     • Ingredient: " + rs.getString("name") + " × " + rs.getDouble("quantity") + note);
+            sb.append("     • Ingredient: ").append(rs.getString("name"))
+                    .append(" × ").append(rs.getDouble("quantity")).append(note).append("\n");
         }
+        return sb.toString();
     }
+
+    // --- Main logic methods ---
 
     public static int getAssignedChef(int taskId) throws SQLException {
         try (Connection conn = DatabaseHelper.getConnection()) {
@@ -161,8 +215,6 @@ public class TaskAssignmentService {
         }
         return false;
     }
-
-//
 
     public static String getChefExpertise(int chefId) {
         try (Connection conn = DatabaseHelper.getConnection()) {
@@ -240,6 +292,7 @@ public class TaskAssignmentService {
         }
         return false;
     }
+
     public static boolean markTaskAsReady(int taskId) {
         try (Connection conn = DatabaseHelper.getConnection()) {
             // 1. Update task status
@@ -251,7 +304,7 @@ public class TaskAssignmentService {
 
             if (updated == 0) return false;
 
-            // 2. Fetch customer ID associated with this task
+            // 2. Fetch customer ID associated with this task (custom orders)
             PreparedStatement query = conn.prepareStatement(
                     "SELECT co.customer_id FROM Tasks t " +
                             "JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id " +
@@ -262,14 +315,9 @@ public class TaskAssignmentService {
 
             if (rs.next()) {
                 int customerId = rs.getInt("customer_id");
-
-                // 3. Add order to customer's history - handled automatically if data is already in Orders
-
-                // 4. Send notification
                 String message = NotificationService.formatNotification("reminder", "Your meal is ready and will be delivered soon.");
                 NotificationService.createNotification(customerId, message);
             }
-
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -277,159 +325,4 @@ public class TaskAssignmentService {
         }
     }
 
-    public static void showActiveTasksForChef(int chefId) {
-        try (Connection conn = DatabaseHelper.getConnection()) {
-            String query = """
-                    SELECT t.task_id,
-                           CASE 
-                               WHEN co.notes IS NOT NULL THEN 'Custom: ' || co.notes
-                               WHEN m.name IS NOT NULL THEN 'Meal: ' || m.name
-                               ELSE 'General cooking task'
-                           END AS description
-                    FROM Tasks t
-                    LEFT JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id
-                    LEFT JOIN Orders o ON t.order_id = o.order_id
-                    LEFT JOIN Order_Items oi ON o.order_id = oi.order_id
-                    LEFT JOIN Meals m ON oi.meal_id = m.meal_id
-                    WHERE t.assigned_to = ?
-                      AND t.status = 'active'
-                      AND t.task_type = 'cooking'
-                    GROUP BY t.task_id, co.notes, m.name
-                    ORDER BY t.task_id
-                    """;
-            PreparedStatement ps = conn.prepareStatement(query);
-            ps.setInt(1, chefId);
-            ResultSet rs = ps.executeQuery();
-
-            System.out.println("\n🔧 Your Active Tasks:");
-            boolean found = false;
-            while (rs.next()) {
-                int taskId = rs.getInt("task_id");
-                String desc = rs.getString("description");
-                System.out.println(" - Task ID: " + taskId + " | " + desc);
-                found = true;
-            }
-            if (!found) {
-                System.out.println("✅ No active cooking tasks assigned to you.");
-            }
-        } catch (SQLException e) {
-            System.out.println("❌ Error loading tasks.");
-            e.printStackTrace();
-        }
-    }
-
-
-    // Capture the output of showPendingTasksWithDetails as a String (for test assertions)
-    public static String capturePendingTasksWithDetails() {
-        StringBuilder sb = new StringBuilder();
-        try (Connection conn = DatabaseHelper.getConnection()) {
-            PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT task_id, order_id, custom_order_id FROM Tasks WHERE assigned_to IS NULL OR assigned_to = 0"
-            );
-            ResultSet rs = stmt.executeQuery();
-
-            sb.append("Pending Tasks with Details:\n");
-            while (rs.next()) {
-                int taskId = rs.getInt("task_id");
-                int orderId = rs.getInt("order_id");
-                int customOrderId = rs.getInt("custom_order_id");
-                sb.append(" - Task ID: ").append(taskId).append("\n");
-
-                if (customOrderId != 0) {
-                    sb.append("   → Linked Custom Order ID: ").append(customOrderId).append("\n");
-                    sb.append(showCustomOrderMealsString(conn, customOrderId));
-                } else if (orderId != 0) {
-                    sb.append("   → Linked Regular Order ID: ").append(orderId).append("\n");
-                    sb.append(showRegularOrderMealsString(conn, orderId));
-                } else {
-                    sb.append("   → No linked order information.\n");
-                }
-                sb.append("\n");
-            }
-        } catch (SQLException e) {
-            sb.append("❌ Error: ").append(e.getMessage());
-        }
-        return sb.toString();
-    }
-
-    // Helper for string-based output for regular orders
-    private static String showRegularOrderMealsString(Connection conn, int orderId) throws SQLException {
-        StringBuilder sb = new StringBuilder();
-        PreparedStatement stmt = conn.prepareStatement(
-                "SELECT m.name, oi.quantity FROM Order_Items oi JOIN Meals m ON oi.meal_id = m.meal_id WHERE oi.order_id = ?"
-        );
-        stmt.setInt(1, orderId);
-        ResultSet rs = stmt.executeQuery();
-        while (rs.next()) {
-            sb.append("     • Meal: ").append(rs.getString("name"))
-                    .append(" × ").append(rs.getInt("quantity")).append("\n");
-        }
-        return sb.toString();
-    }
-
-    // Helper for string-based output for custom orders
-    private static String showCustomOrderMealsString(Connection conn, int customOrderId) throws SQLException {
-        StringBuilder sb = new StringBuilder();
-        PreparedStatement stmt = conn.prepareStatement(
-                "SELECT i.name, coi.quantity, coi.substitution FROM Customized_Order_Ingredients coi " +
-                        "JOIN Ingredients i ON coi.ingredient_id = i.ingredient_id WHERE coi.custom_order_id = ?"
-        );
-        stmt.setInt(1, customOrderId);
-        ResultSet rs = stmt.executeQuery();
-        while (rs.next()) {
-            String substitution = rs.getString("substitution");
-            String note = (substitution != null && !substitution.isEmpty()) ? " (sub: " + substitution + ")" : "";
-            sb.append("     • Ingredient: ").append(rs.getString("name"))
-                    .append(" × ").append(rs.getDouble("quantity")).append(note).append("\n");
-        }
-        return sb.toString();
-    }
-
-    // Capture active tasks for chef as a String
-    public static String captureActiveTasksForChef(int chefId) {
-        StringBuilder sb = new StringBuilder();
-        try (Connection conn = DatabaseHelper.getConnection()) {
-            String query = """
-            SELECT t.task_id,
-                   CASE 
-                       WHEN co.notes IS NOT NULL THEN 'Custom: ' || co.notes
-                       WHEN m.name IS NOT NULL THEN 'Meal: ' || m.name
-                       ELSE 'General cooking task'
-                   END AS description
-            FROM Tasks t
-            LEFT JOIN Customized_Orders co ON t.custom_order_id = co.custom_order_id
-            LEFT JOIN Orders o ON t.order_id = o.order_id
-            LEFT JOIN Order_Items oi ON o.order_id = oi.order_id
-            LEFT JOIN Meals m ON oi.meal_id = m.meal_id
-            WHERE t.assigned_to = ?
-              AND t.status = 'active'
-              AND t.task_type = 'cooking'
-            GROUP BY t.task_id, co.notes, m.name
-            ORDER BY t.task_id
-            """;
-            PreparedStatement ps = conn.prepareStatement(query);
-            ps.setInt(1, chefId);
-            ResultSet rs = ps.executeQuery();
-
-            sb.append("\n🔧 Your Active Tasks:\n");
-            boolean found = false;
-            while (rs.next()) {
-                int taskId = rs.getInt("task_id");
-                String desc = rs.getString("description");
-                sb.append(" - Task ID: ").append(taskId).append(" | ").append(desc).append("\n");
-                found = true;
-            }
-            if (!found) {
-                sb.append("✅ No active cooking tasks assigned to you.\n");
-            }
-        } catch (SQLException e) {
-            sb.append("❌ Error loading tasks.\n");
-        }
-        return sb.toString();
-    }
-
-
-
 }
-
-

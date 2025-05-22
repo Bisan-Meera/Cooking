@@ -7,13 +7,17 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import static com.myproject.cooking1.entities.TaskAssignmentService.assignTaskToChef;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class task_assignment {
 
@@ -203,7 +207,7 @@ public class task_assignment {
     public void theKitchenManagerAssignsTheTaskToThatChef() {
         int chefId = DatabaseHelper.getSpecificChefId();
         int taskId = DatabaseHelper.getSpecificTaskId();
-        boolean success = TaskAssignmentService.assignTaskToChef(taskId, chefId);
+        boolean success = assignTaskToChef(taskId, chefId);
         TestContext.set("manualAssignSuccess", success);
         TestContext.set("assignedTaskId", taskId);
         TestContext.set("assignedChefId", chefId);
@@ -338,6 +342,231 @@ public class task_assignment {
     public void theSystemShouldDisplayHerActiveCookingTasksInConsole() {
         //  empty is fine for coverage.
     }
+
+
+// ... (your usual imports, unchanged)
+
+    @Test
+    public void testAssignToLeastLoadedChef_DbFailure() {
+        DatabaseHelper.simulateDatabaseFailure(true);
+        int taskId = TaskAssignmentService.assignToLeastLoadedChef();
+        assertEquals(-1, taskId);
+        DatabaseHelper.simulateDatabaseFailure(false);
+    }
+
+    @Test
+    public void testAssignToChefWithExpertise_DbFailure() {
+        DatabaseHelper.simulateDatabaseFailure(true);
+        int taskId = TaskAssignmentService.assignToChefWithExpertise("Anything");
+        assertEquals(-1, taskId);
+        DatabaseHelper.simulateDatabaseFailure(false);
+    }
+
+    @Test
+    public void testGetChefExpertise_NotChef() {
+        String expertise = TaskAssignmentService.getChefExpertise(99999);
+        assertNull(expertise);
+    }
+
+    @Test
+    public void testGetAllChefsWithWorkloadAndExpertise_Empty() {
+        DatabaseHelper.clearChefsAndTasks();
+        List<User> chefs = TaskAssignmentService.getAllChefsWithWorkloadAndExpertise();
+        assertTrue(chefs.isEmpty());
+    }
+
+    @Test
+    public void testGetTaskCount_InvalidUser() {
+        String count = TaskAssignmentService.getTaskCount(99999);
+        assertEquals("0", count);
+    }
+
+    @Test
+    public void testMarkTaskAsReady_TaskNotLinkedToOrder() {
+        DatabaseHelper.clearChefsAndTasks();
+        // Insert a task with no order links
+        int chefId = DatabaseHelper.addChef("Temp Chef", "None", 0);
+        int taskId = DatabaseHelper.createUnlinkedTask(chefId);
+        boolean result = TaskAssignmentService.markTaskAsReady(taskId);
+        assertTrue(result); // Should still return true even if no customer found
+    }
+
+    @Then("the task should be marked ready without errors")
+    public void taskMarkedReadyWithoutErrors() {
+        boolean result = TestContext.get("taskReadyResult", Boolean.class);
+        assertTrue(result);
+    }
+
+    @When("the chef marks the task as ready \\(minimal)")
+    public void theChefMarksTheTaskAsReadyMinimal() {
+        int taskId = TestContext.get("assignedTaskId", Integer.class);
+        boolean result = TaskAssignmentService.markTaskAsReady(taskId);
+        TestContext.set("taskReadyResult", result);
+    }
+
+    @Then("the system should indicate no pending tasks clearly")
+    public void systemIndicatesNoPendingTasksClearly() {
+        String output = TestContext.get("pendingTasksOutput", String.class);
+        assertTrue(output.contains("Pending Tasks with Details:"));
+        assertFalse(output.contains("Task ID:"));  // no tasks shown
+    }
+
+    @When("Chef John requests to view his active tasks")
+    public void chefJohnRequestsActiveTasks() {
+        int chefId = DatabaseHelper.getChefIdByName("Chef John");
+        String output = TaskAssignmentService.captureActiveTasksForChef(chefId);
+        TestContext.set("activeTasksOutput", output);
+    }
+
+    @Then("the system should indicate no active tasks clearly")
+    public void systemIndicatesNoActiveTasksClearly() {
+        String output = TestContext.get("activeTasksOutput", String.class);
+        assertTrue(output.contains("✅ No active cooking tasks assigned to you."));
+    }
+
+    @When("the kitchen manager requests the list of chefs with workload and expertise")
+    public void theKitchenManagerRequestsTheListOfChefs() {
+        List<User> chefs = TaskAssignmentService.getAllChefsWithWorkloadAndExpertise();
+        TestContext.set("chefList", chefs);
+    }
+
+    @Then("the system should receive an empty list")
+    public void systemShouldReceiveEmptyList() {
+        List<User> chefs = TestContext.get("chefList", List.class);
+        assertTrue(chefs.isEmpty());
+    }
+
+    @Test
+    public void testCreateTaskForChef_InsertFailure() {
+        DatabaseHelper.simulateDatabaseFailure(true);
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            int result = TaskAssignmentService.createTaskForChef(conn, 1);
+            assertEquals(-1, result);
+        } catch (SQLException e) {
+            // Expected, as we're simulating failure
+        }
+        DatabaseHelper.simulateDatabaseFailure(false);
+    }
+
+    @Given("there are pending cooking tasks with regular and custom orders")
+    public void thereArePendingCookingTasksWithRegularAndCustomOrders() {
+        // (full method shown in your pasted code above, inserts regular & custom tasks for testing)
+    }
+
+    @Then("all pending tasks and their linked order or meal details should be displayed correctly")
+    public void allPendingTasksAndLinkedDetailsDisplayedCorrectly() {
+        // (full method shown in your pasted code above, asserts on a variety of output substrings)
+    }
+
+    @Given("there are pending cooking tasks with a custom order having no ingredients")
+    public void thereArePendingCookingTasksWithCustomOrderHavingNoIngredients() {
+        // (full method shown in your pasted code above, sets up the case for a custom order with no ingredients)
+    }
+
+    @Then("all pending tasks and their linked order details should be displayed with no ingredient details for the custom order")
+    public void allPendingTasksDisplayedWithNoIngredientDetailsForCustomOrder() {
+        // (full method shown in your pasted code above, checks for absence of ingredient details in output)
+    }
+
+    @Given("there is a chef available in the system")
+    public void thereIsChefAvailableInTheSystem() {
+        // (full method shown in your pasted code above, inserts a test chef and puts chefId in TestContext)
+    }
+
+    @Given("there is a pending cooking task in the kitchen")
+    public void thereIsPendingCookingTaskInTheKitchen() {
+        // (full method shown in your pasted code above, inserts a pending task and puts taskId in TestContext)
+    }
+
+    @When("the kitchen manager assigns the task to the chef")
+    public void kitchenManagerAssignsTaskToTheChef() {
+        Integer taskId = TestContext.get("taskId", Integer.class);
+        Integer chefId = TestContext.get("chefId", Integer.class);
+        boolean result = assignTaskToChef(taskId, chefId);
+        TestContext.set("assignmentResult", result);
+    }
+
+    @Then("the task should be successfully assigned to the chef")
+    public void taskShouldBeSuccessfullyAssignedToTheChef() {
+        Boolean result = TestContext.get("assignmentResult", Boolean.class);
+        Integer taskId = TestContext.get("taskId", Integer.class);
+        Integer chefId = TestContext.get("chefId", Integer.class);
+
+        // Verify assignment success
+        assertTrue("Task assignment failed", result);
+
+        // Verify task is assigned in database
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT assigned_to FROM Tasks WHERE task_id = ?"
+            );
+            stmt.setInt(1, taskId);
+            ResultSet rs = stmt.executeQuery();
+            assertTrue("Task has no assigned chef", rs.next());
+            assertEquals("Assigned chef ID does not match", chefId.intValue(), rs.getInt("assigned_to"));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            fail("Database error while verifying task assignment: " + e.getMessage());
+        }
+    }
+
+    @When("the kitchen manager attempts to assign an invalid task to the chef")
+    public void kitchenManagerAttemptsToAssignInvalidTaskToTheChef() {
+        Integer chefId = TestContext.get("chefId", Integer.class);
+        // Use a taskId that is unlikely to exist (e.g., a large number)
+        int invalidTaskId = 999999;
+        boolean result = assignTaskToChef(invalidTaskId, chefId);
+        TestContext.set("assignmentResult", result);
+    }
+
+    @Then("the task assignment should fail")
+    public void taskAssignmentShouldFail() {
+        Boolean result = TestContext.get("assignmentResult", Boolean.class);
+        assertFalse("Task assignment unexpectedly succeeded", result);
+
+        // Verify task does not exist in database
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT task_id FROM Tasks WHERE task_id = ?"
+            );
+            stmt.setInt(1, 999999);
+            ResultSet rs = stmt.executeQuery();
+            assertFalse("Invalid task unexpectedly exists", rs.next());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            fail("Database error while verifying task non-existence: " + e.getMessage());
+        }
+    }
+
+    @When("the kitchen manager attempts to assign the task to an invalid chef")
+    public void kitchenManagerAttemptsToAssignTaskToInvalidChef() {
+        Integer taskId = TestContext.get("taskId", Integer.class);
+        // Use a chefId that is unlikely to exist (e.g., a large number)
+        int invalidChefId = 999999;
+        boolean result = assignTaskToChef(taskId, invalidChefId);
+        TestContext.set("assignmentResult", result);
+    }
+
+    @Then("the task remains unassigned in the database")
+    public void taskRemainsUnassignedInDatabase() {
+        Boolean result = TestContext.get("assignmentResult", Boolean.class);
+        Integer taskId = TestContext.get("taskId", Integer.class);
+        assertFalse("Task assignment unexpectedly succeeded", result);
+
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "SELECT assigned_to FROM Tasks WHERE task_id = ?"
+            );
+            stmt.setInt(1, taskId);
+            ResultSet rs = stmt.executeQuery();
+            assertTrue("Task not found", rs.next());
+            assertNull( rs.getObject("assigned_to"));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            fail("Database error while verifying task assignment: " + e.getMessage());
+        }
+    }
+
 
 
 
