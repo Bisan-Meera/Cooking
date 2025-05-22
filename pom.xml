@@ -91,13 +91,12 @@
     <build>
         <testResources>
             <testResource>
-                <directory>src/test/resources</directory>
+                <directory>MyFeatures</directory>
                 <includes>
                     <include>**/*.feature</include>
                 </includes>
             </testResource>
         </testResources>
-
         <plugins>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -136,7 +135,6 @@
                 </configuration>
             </plugin>
         </plugins>
-
-
     </build>
+
 </project>
