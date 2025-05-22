@@ -310,7 +310,7 @@ public class CustomerProfileAndPrefrences {
         ProfileForm form = new ProfileForm() {
             @Override
             public String submit() {
-                try { throw new RuntimeException((String) null); }
+                try { throw new RuntimeException((String)null); }
                 catch (Exception e) {
                     String msg = e.getMessage();
                     if (msg != null && !msg.isBlank()) return msg;

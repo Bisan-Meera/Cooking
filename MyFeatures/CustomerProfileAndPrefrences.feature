@@ -107,3 +107,18 @@ Feature: Customer Profile & Preferences
     Given a logged-in customer with user_id 406 is on the preferences page
     When they try to save preferences and a checked exception occurs
     Then the system should show "checked exception!"
+
+  Scenario: Exception occurs with blank error message while saving preferences
+    Given a logged-in customer with user_id 404 is on the preferences page
+    When they try to save preferences and a blank error occurs
+    Then the system should show "Unable to save preferences due to system error"
+
+  Scenario: Exception occurs with null error message while saving preferences
+    Given a logged-in customer with user_id 405 is on the preferences page
+    When they try to save preferences and a null error occurs
+    Then the system should show "Unable to save preferences due to system error"
+
+  Scenario: Checked exception occurs while saving preferences
+    Given a logged-in customer with user_id 406 is on the preferences page
+    When they try to save preferences and a checked exception occurs
+    Then the system should show "checked exception!"
