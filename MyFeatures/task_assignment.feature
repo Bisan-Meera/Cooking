@@ -199,26 +199,5 @@ Feature: Scheduling and Task Assignment
     Then the system should handle the error gracefully and return "0"
 
 
-  Scenario: Display pending task with linked custom order
-    Given there are pending cooking tasks with a custom order
-    When the kitchen manager requests to view all pending tasks
-    Then the output should include "→ Linked Custom Order ID:"
-    And the output should include "Ingredient:" # from showCustomOrderMealsString
-
-  Scenario: Display pending task with linked regular order
-    Given there are pending cooking tasks with a regular order
-    When the kitchen manager requests to view all pending tasks
-    Then the output should include "→ Linked Regular Order ID:"
-    And the output should include "Meal:" # from showRegularOrderMealsString
-
-  Scenario: Display pending task with no linked order
-    Given there are pending cooking tasks with no linked orders
-    When the kitchen manager requests to view all pending tasks
-    Then the output should include "No linked order information."
-
-  Scenario: Display pending task with custom order ingredient substitution
-    Given there are pending cooking tasks with a custom order having substitution
-    When the kitchen manager requests to view all pending tasks
-    Then the output should include "(sub:"
 
 

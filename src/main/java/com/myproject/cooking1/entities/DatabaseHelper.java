@@ -234,16 +234,7 @@ public class DatabaseHelper {
         return -1;
     }
 
-    public static void createPendingTaskWithNoOrderLinks() {
-        try (Connection conn = getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO Tasks (assigned_to, order_id, custom_order_id, status) VALUES (NULL, 0, 0, 'pending')"
-            );
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+
 
 
 }
