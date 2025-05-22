@@ -8,6 +8,7 @@ import io.cucumber.java.en.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -16,6 +17,8 @@ public class place_order {
     private final List<String> selectedMeals = new ArrayList<>();
     private int customerId = 1; // assume a logged-in customer
     private int orderId;
+    private List<Map<String, String>> orderHistory;
+
 
     @Given("the system has predefined meals")
     public void theSystemHasPredefinedMeals() {
@@ -105,6 +108,38 @@ public class place_order {
 
 
 
+    @When("the customer selects no meals")
+    public void theCustomerSelectsNoMeals() {
+        selectedMeals.clear();
+    }
+
+
+    @Then("the system should not create an order")
+    public void theSystemShouldNotCreateOrder() {
+        try {
+            OrderService service = new OrderService();
+            orderId = service.createOrder(customerId, selectedMeals); // selectedMeals should be empty
+            assertTrue("Order should not be created when no meals are selected", orderId <= 0);
+        } catch (RuntimeException e) {
+            // You might throw or log as appropriate
+            System.out.println("❌ Expected failure: " + e.getMessage());
+        } catch (SQLException e) {
+            throw new RuntimeException("Unexpected SQL error", e);
+        }
+    }
+
+    @When("the customer requests their order history")
+    public void theCustomerRequestsOrderHistory() throws SQLException {
+        OrderService service = new OrderService();
+        orderHistory = service.getCustomerOrderHistory(customerId);
+    }
+
+    @Then("the system should return a list of their past orders")
+    public void theSystemShouldReturnOrderHistory() {
+        assertNotNull("Order history should not be null", orderHistory);
+        // Optionally: assertTrue(orderHistory.size() >= 0);
+        System.out.println("Order History: " + orderHistory);
+    }
 
 
 }

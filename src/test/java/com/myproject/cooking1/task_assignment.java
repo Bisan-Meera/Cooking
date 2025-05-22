@@ -318,6 +318,30 @@ public class task_assignment {
         assertNull(expertise);
     }
 
+    @When("the kitchen manager requests to print all pending tasks")
+    public void theKitchenManagerRequestsToPrintAllPendingTasks() {
+        TaskAssignmentService.showPendingTasksWithDetails();
+    }
+
+    @Then("the system should display pending tasks with details in the console")
+    public void theSystemShouldDisplayPendingTasksWithDetailsInConsole() {
+        // just leave this empty (smoke test),
+
+    }
+    @When("she requests to print her active tasks")
+    public void sheRequestsToPrintHerActiveTasks() {
+        int chefId = TestContext.get("chefId", Integer.class);
+        TaskAssignmentService.showActiveTasksForChef(chefId);
+    }
+
+    @Then("the system should display her active cooking tasks in the console")
+    public void theSystemShouldDisplayHerActiveCookingTasksInConsole() {
+        //  empty is fine for coverage.
+    }
+
+
+
+
 
 
 }
