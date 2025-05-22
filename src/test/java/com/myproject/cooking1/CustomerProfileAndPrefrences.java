@@ -212,5 +212,80 @@ public class CustomerProfileAndPrefrences {
         assertEquals("", prefs.getAllergy());
     }
 
+    @When("they set the preference to {string} and leave allergy empty")
+    public void theySetPreferenceOnly(String preference) {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences(preference);
+        form.setAllergy(""); // empty allergy
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+    @When("they set the allergy to {string} and leave preference empty")
+    public void theySetAllergyOnly(String allergy) {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences(""); // empty preference
+        form.setAllergy(allergy);
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+    @When("they submit the profile form")
+    public void theySubmitProfileForm() {
+        // Action is done in above steps, nothing to do here
+    }
+
+    @Then("Then the system should show {string}")
+    public void theSystemShouldDisplay(String expectedMsg) {
+        assertEquals(expectedMsg, TestContext.get("lastMessage", String.class));
+    }
+
+
+    @When("they set both preference and allergy to null")
+    public void theySetBothFieldsNull() {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences(null);
+        form.setAllergy(null);
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+
+    @When("they simulate a DB failure and submit preference {string}")
+    public void simulateDbFailureSubmit(String preference) {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences(preference);
+        form.setAllergy("");
+        form.simulateDbFailure(true);
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+    @When("they retry submitting with DB OK")
+    public void retryWithDbOk() {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences("Vegetarian");
+        form.setAllergy("");
+        form.simulateDbFailure(false);
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+    @When("they set the preference to {string} and the allergy to {string}")
+    public void setPreferenceAndAllergyWithSpaces(String preference, String allergy) {
+        ProfileForm form = new ProfileForm();
+        form.setUserId(currentUserId);
+        form.setPreferences(preference);
+        form.setAllergy(allergy);
+        String result = form.submit();
+        TestContext.set("lastMessage", result);
+    }
+
+
 
 }

@@ -114,3 +114,11 @@ Feature: Scheduling and Task Assignment
     When the kitchen manager requests the expertise for chef id 9999
     Then the system should receive no expertise
 
+  Scenario: Display all pending tasks with details using print method
+    When the kitchen manager requests to print all pending tasks
+    Then the system should display pending tasks with details in the console
+
+  Scenario: Display all active tasks for a chef using print method
+    Given Chef Maria is logged in
+    When she requests to print her active tasks
+    Then the system should display her active cooking tasks in the console

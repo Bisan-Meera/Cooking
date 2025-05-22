@@ -36,7 +36,7 @@ Feature: Customer Profile & Preferences
   Scenario Outline: Database error while saving preferences
     Given a logged-in customer with user_id <UserID> is on the preferences page
     When they select dietary preferences and a database error occurs while saving
-    Then the system should display "Unable to save preferences due to system error"
+    Then the system should show "Unable to save preferences due to system error"
 
     Examples:
       | UserID |
@@ -46,14 +46,48 @@ Feature: Customer Profile & Preferences
   Scenario: Exception occurs while saving preferences
     Given a logged-in customer with user_id 3 is on the profile settings page
     When they try to save preferences and a simulated DB failure occurs
-    Then the system should display "Database error while updating preferences"
+    Then the system should show "Database error while updating preferences"
 
   Scenario: Exception occurs while viewing preferences
     Given a logged-in customer with user_id 3 is on the preferences page
     When they try to view preferences and the database fails
-    Then the system should display "Database error while fetching preferences"
+    Then the system should show "Database error while fetching preferences"
 
   Scenario: Viewing preferences when none are saved
-    Given a logged-in customer with user_id 4 is on the preferences page
+    Given a logged-in customer with user_id 667 is on the preferences page
     When they view preferences without any saved data
     Then the system should return blank preferences
+
+  Scenario: Submit form with only preference filled
+    Given a logged-in customer with user_id 103 is on the preferences page
+    When they set the preference to "Halal" and leave allergy empty
+    And they submit the profile form
+    Then the system should show "Preferences saved successfully"
+
+  Scenario: Submit form with only allergy filled
+    Given a logged-in customer with user_id 143 is on the preferences page
+    When they set the allergy to "Peanuts" and leave preference empty
+    And they submit the profile form
+    Then the system should show "Preferences saved successfully"
+
+
+  Scenario: Submit form with null preference and allergy
+    Given a logged-in customer with user_id 3000 is on the preferences page
+    When they set both preference and allergy to null
+    And they submit the profile form
+    Then the system should show "Preferences cannot be empty"
+
+  Scenario: Retry submit after DB failure
+    Given a logged-in customer with user_id 3030 is on the preferences page
+    When they simulate a DB failure and submit preference "Vegetarian"
+    Then the system should show "Unable to save preferences due to system error"
+    When they retry submitting with DB OK
+    Then the system should show "Preferences saved successfully"
+
+
+  Scenario: Submit preferences with extra spaces
+    Given a logged-in customer with user_id 3085 is on the preferences page
+    When they set the preference to " Vegan " and the allergy to " Dairy "
+    And they submit the profile form
+    Then the system should show "Preferences saved successfully"
+
