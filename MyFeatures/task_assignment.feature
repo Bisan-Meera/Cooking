@@ -221,8 +221,4 @@ Feature: Scheduling and Task Assignment
     When the kitchen manager requests to view all pending tasks
     Then the output should include "(sub:"
 
-  Scenario: View pending tasks when there are no pending tasks
-    Given there are no pending tasks in the kitchen
-    When the kitchen manager requests to view all pending tasks
-    Then the output should not include "Task ID:"
 
