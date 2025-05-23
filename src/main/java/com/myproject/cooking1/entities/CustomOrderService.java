@@ -59,17 +59,19 @@ public class CustomOrderService {
     }
 
     private static double getStockQuantity(Connection conn, String name) throws SQLException {
-        PreparedStatement checkStock = conn.prepareStatement(
-                "SELECT stock_quantity FROM Ingredients WHERE name ILIKE ?"
-        );
-        checkStock.setString(1, name);
-        ResultSet rs = checkStock.executeQuery();
-        if (rs.next()) {
-            return rs.getDouble("stock_quantity");
-        } else {
-            throw new IllegalArgumentException("Ingredient not found: " + name);
+        try (PreparedStatement checkStock = conn.prepareStatement(
+                "SELECT stock_quantity FROM Ingredients WHERE name ILIKE ?")) {
+            checkStock.setString(1, name);
+            try (ResultSet rs = checkStock.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("stock_quantity");
+                } else {
+                    throw new IllegalArgumentException("Ingredient not found: " + name);
+                }
+            }
         }
     }
+
 
     private static int createCustomOrder(Connection conn, int userId, List<String> ingredients) throws SQLException {
         PreparedStatement insertOrder = conn.prepareStatement(
@@ -109,14 +111,15 @@ public class CustomOrderService {
     }
 
     private static void insertUsage(Connection conn, int customOrderId, int ingId) throws SQLException {
-        PreparedStatement insertUsage = conn.prepareStatement(
-                "INSERT INTO Customized_Order_Ingredients (custom_order_id, ingredient_id, quantity) VALUES (?, ?, ?)"
-        );
-        insertUsage.setInt(1, customOrderId);
-        insertUsage.setInt(2, ingId);
-        insertUsage.setDouble(3, DEFAULT_QUANTITY);
-        insertUsage.executeUpdate();
+        try (PreparedStatement insertUsage = conn.prepareStatement(
+                "INSERT INTO Customized_Order_Ingredients (custom_order_id, ingredient_id, quantity) VALUES (?, ?, ?)")) {
+            insertUsage.setInt(1, customOrderId);
+            insertUsage.setInt(2, ingId);
+            insertUsage.setDouble(3, DEFAULT_QUANTITY);
+            insertUsage.executeUpdate();
+        }
     }
+
 
     private static void deductStock(Connection conn, int ingId) throws SQLException {
         PreparedStatement deduct = conn.prepareStatement(
