@@ -183,8 +183,9 @@ public class CustomerProfileAndPrefrences {
 
     @Given("a logged-in customer with user_id {int} is on the profile settings page")
     public void aLoggedInCustomerWithUserIdIsOnTheProfileSettingsPage(Integer int1) {
-
+        // Intentionally left blank: state is managed by test context or previous steps
     }
+
 
     @When("they select dietary preferences and a database error occurs while saving")
     public void theySelectDietaryPreferencesAndADatabaseErrorOccursWhileSaving() {
