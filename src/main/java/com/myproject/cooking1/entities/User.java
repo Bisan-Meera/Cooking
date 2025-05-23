@@ -63,7 +63,6 @@ public class User {
         }
     }
 
-
     public static User getUserByIdAndName(int userId, String name, Connection conn) throws SQLException {
         String sql = "SELECT * FROM Users WHERE user_id = ? AND name = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -105,7 +104,6 @@ public class User {
         return null;
     }
 
-
     public String getExpertise() {
         return expertise;
     }
@@ -113,14 +111,16 @@ public class User {
     public void setExpertise(String expertise) {
         this.expertise = expertise;
     }
+
     public static List<Integer> getUserIdsByRole(String role) {
         List<Integer> ids = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM Users WHERE role = ?");
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT user_id FROM Users WHERE role = ?")) {
             ps.setString(1, role);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                ids.add(rs.getInt("user_id"));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt("user_id"));
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
