@@ -22,12 +22,13 @@ public class DatabaseHelper {
         }
         return DBConnection.getConnection();
     }
+    private static final String USER_ID = "user_id";
 
     public static int addChef(String name, String expertise, int activeTasks) {
         try (Connection conn = getConnection()) {
             String email = name.toLowerCase().replace(" ", "") + UUID.randomUUID().toString().substring(0, 6) + "@test.com";
             PreparedStatement insertChef = conn.prepareStatement(
-                    "INSERT INTO Users (name, email, password, role, expertise) VALUES (?, ?, ?, 'chef', ?) RETURNING user_id"
+                    "INSERT INTO Users (name, email, password, role, expertise) VALUES (?, ?, ?, 'chef', ?) RETURNING " + USER_ID
             );
             insertChef.setString(1, name);
             insertChef.setString(2, email);
@@ -36,7 +37,7 @@ public class DatabaseHelper {
 
             ResultSet rs = insertChef.executeQuery();
             if (rs.next()) {
-                int chefId = rs.getInt("user_id");
+                int chefId = rs.getInt(USER_ID);
 
                 for (int i = 0; i < activeTasks; i++) {
                     PreparedStatement taskStmt = conn.prepareStatement(
