@@ -72,24 +72,24 @@ public class CustomOrderService {
         }
     }
 
-
     private static int createCustomOrder(Connection conn, int userId, List<String> ingredients) throws SQLException {
-        PreparedStatement insertOrder = conn.prepareStatement(
-                "INSERT INTO Customized_Orders (customer_id, notes) VALUES (?, ?) RETURNING " + CUSTOM_ORDER_ID
-        );
-        insertOrder.setInt(1, userId);
-        insertOrder.setString(2, "Custom meal with ingredients: " + String.join(", ", ingredients));
-        ResultSet orderRs = insertOrder.executeQuery();
-        if (!orderRs.next()) throw new SQLException("Failed to create custom order");
-        return orderRs.getInt(CUSTOM_ORDER_ID);
+        try (PreparedStatement insertOrder = conn.prepareStatement(
+                "INSERT INTO Customized_Orders (customer_id, notes) VALUES (?, ?) RETURNING " + CUSTOM_ORDER_ID)) {
+            insertOrder.setInt(1, userId);
+            insertOrder.setString(2, "Custom meal with ingredients: " + String.join(", ", ingredients));
+            try (ResultSet orderRs = insertOrder.executeQuery()) {
+                if (!orderRs.next()) throw new SQLException("Failed to create custom order");
+                return orderRs.getInt(CUSTOM_ORDER_ID);
+            }
+        }
     }
 
     private static void insertTask(Connection conn, int customOrderId) throws SQLException {
-        PreparedStatement insertTask = conn.prepareStatement(
-                "INSERT INTO Tasks (custom_order_id, task_type, status) VALUES (?, 'cooking', 'active')"
-        );
-        insertTask.setInt(1, customOrderId);
-        insertTask.executeUpdate();
+        try (PreparedStatement insertTask = conn.prepareStatement(
+                "INSERT INTO Tasks (custom_order_id, task_type, status) VALUES (?, 'cooking', 'active')")) {
+            insertTask.setInt(1, customOrderId);
+            insertTask.executeUpdate();
+        }
     }
 
     private static void deductStockAndSaveUsage(Connection conn, int customOrderId, List<String> ingredients) throws SQLException {
@@ -101,13 +101,14 @@ public class CustomOrderService {
     }
 
     private static int getIngredientId(Connection conn, String name) throws SQLException {
-        PreparedStatement getId = conn.prepareStatement(
-                "SELECT ingredient_id FROM Ingredients WHERE name ILIKE ?"
-        );
-        getId.setString(1, name);
-        ResultSet idRs = getId.executeQuery();
-        if (!idRs.next()) throw new SQLException("Ingredient ID not found for: " + name);
-        return idRs.getInt(INGREDIENT_ID);
+        try (PreparedStatement getId = conn.prepareStatement(
+                "SELECT ingredient_id FROM Ingredients WHERE name ILIKE ?")) {
+            getId.setString(1, name);
+            try (ResultSet idRs = getId.executeQuery()) {
+                if (!idRs.next()) throw new SQLException("Ingredient ID not found for: " + name);
+                return idRs.getInt(INGREDIENT_ID);
+            }
+        }
     }
 
     private static void insertUsage(Connection conn, int customOrderId, int ingId) throws SQLException {
@@ -120,14 +121,13 @@ public class CustomOrderService {
         }
     }
 
-
     private static void deductStock(Connection conn, int ingId) throws SQLException {
-        PreparedStatement deduct = conn.prepareStatement(
-                "UPDATE Ingredients SET stock_quantity = stock_quantity - ? WHERE ingredient_id = ?"
-        );
-        deduct.setDouble(1, DEFAULT_QUANTITY);
-        deduct.setInt(2, ingId);
-        deduct.executeUpdate();
+        try (PreparedStatement deduct = conn.prepareStatement(
+                "UPDATE Ingredients SET stock_quantity = stock_quantity - ? WHERE ingredient_id = ?")) {
+            deduct.setDouble(1, DEFAULT_QUANTITY);
+            deduct.setInt(2, ingId);
+            deduct.executeUpdate();
+        }
     }
 
     private static void handleSubstitutionsAndNotify(int customOrderId, Map<String, String> substitutions) throws SQLException {
