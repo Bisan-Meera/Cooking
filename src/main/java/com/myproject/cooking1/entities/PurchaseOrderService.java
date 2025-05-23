@@ -1,25 +1,21 @@
 package com.myproject.cooking1.entities;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import com.myproject.cooking1.DBConnection;
+
 public class PurchaseOrderService {
 
-
-
     public void createAutoPurchaseOrders() {
-        try (Connection conn = DBConnection.getConnection()) {
-            String check = "SELECT i.ingredient_id, i.name, si.supplier_id, si.price_per_unit " +
-                    "FROM ingredients i " +
-                    "JOIN supplier_ingredients si ON i.ingredient_id = si.ingredient_id " +
-                    "WHERE i.stock_quantity <= i.threshold";
-            ResultSet rs = conn.createStatement().executeQuery(check);
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT i.ingredient_id, i.name, si.supplier_id, si.price_per_unit " +
+                             "FROM ingredients i " +
+                             "JOIN supplier_ingredients si ON i.ingredient_id = si.ingredient_id " +
+                             "WHERE i.stock_quantity <= i.threshold")) {
 
             while (rs.next()) {
                 int ingredientId = rs.getInt("ingredient_id");
@@ -27,15 +23,15 @@ public class PurchaseOrderService {
                 double price = rs.getDouble("price_per_unit");
                 double quantityToReorder = 50.0;
 
-                PreparedStatement ps = conn.prepareStatement(
+                try (PreparedStatement ps = conn.prepareStatement(
                         "INSERT INTO purchase_orders (ingredient_id, supplier_id, quantity, price, status, created_at) " +
-                                "VALUES (?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP)");
-                ps.setInt(1, ingredientId);
-                ps.setInt(2, supplierId);
-                ps.setDouble(3, quantityToReorder);
-                ps.setDouble(4, price);
-                ps.executeUpdate();
-
+                                "VALUES (?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP)")) {
+                    ps.setInt(1, ingredientId);
+                    ps.setInt(2, supplierId);
+                    ps.setDouble(3, quantityToReorder);
+                    ps.setDouble(4, price);
+                    ps.executeUpdate();
+                }
                 System.out.println("Auto order created for ingredient ID: " + ingredientId);
             }
         } catch (SQLException e) {
@@ -44,8 +40,9 @@ public class PurchaseOrderService {
     }
 
     public void approveAllPendingOrders() {
-        try (Connection conn = DBConnection.getConnection()) {
-            int updated = conn.createStatement().executeUpdate("UPDATE purchase_orders SET status = 'Approved' WHERE status = 'Pending'");
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            int updated = stmt.executeUpdate("UPDATE purchase_orders SET status = 'Approved' WHERE status = 'Pending'");
             System.out.println(updated + " pending orders approved.");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -53,25 +50,27 @@ public class PurchaseOrderService {
     }
 
     public void createManualOrder(int ingredientId, double quantity) {
-        try (Connection conn = DBConnection.getConnection()) {
-            PreparedStatement ps = conn.prepareStatement(
-                    "SELECT supplier_id, price_per_unit FROM supplier_ingredients WHERE ingredient_id = ? LIMIT 1");
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT supplier_id, price_per_unit FROM supplier_ingredients WHERE ingredient_id = ? LIMIT 1")) {
             ps.setInt(1, ingredientId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int supplierId = rs.getInt("supplier_id");
-                double price = rs.getDouble("price_per_unit");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int supplierId = rs.getInt("supplier_id");
+                    double price = rs.getDouble("price_per_unit");
 
-                PreparedStatement insert = conn.prepareStatement(
-                        "INSERT INTO purchase_orders (ingredient_id, supplier_id, quantity, price, status, created_at) " +
-                                "VALUES (?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP)");
-                insert.setInt(1, ingredientId);
-                insert.setInt(2, supplierId);
-                insert.setDouble(3, quantity);
-                insert.setDouble(4, price);
-                insert.executeUpdate();
+                    try (PreparedStatement insert = conn.prepareStatement(
+                            "INSERT INTO purchase_orders (ingredient_id, supplier_id, quantity, price, status, created_at) " +
+                                    "VALUES (?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP)")) {
+                        insert.setInt(1, ingredientId);
+                        insert.setInt(2, supplierId);
+                        insert.setDouble(3, quantity);
+                        insert.setDouble(4, price);
+                        insert.executeUpdate();
+                    }
 
-                System.out.println("Manual order created.");
+                    System.out.println("Manual order created.");
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -80,13 +79,14 @@ public class PurchaseOrderService {
 
     public List<String> listPendingOrders() {
         List<String> orders = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection()) {
-            ResultSet rs = conn.createStatement().executeQuery(
-                    "SELECT po.purchase_order_id, i.name AS ingredient, s.name AS supplier, po.quantity, po.price " +
-                            "FROM purchase_orders po " +
-                            "JOIN ingredients i ON po.ingredient_id = i.ingredient_id " +
-                            "JOIN suppliers s ON po.supplier_id = s.supplier_id " +
-                            "WHERE po.status = 'Pending'");
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT po.purchase_order_id, i.name AS ingredient, s.name AS supplier, po.quantity, po.price " +
+                             "FROM purchase_orders po " +
+                             "JOIN ingredients i ON po.ingredient_id = i.ingredient_id " +
+                             "JOIN suppliers s ON po.supplier_id = s.supplier_id " +
+                             "WHERE po.status = 'Pending'")) {
             while (rs.next()) {
                 String summary = String.format("Order ID: %d | Ingredient: %s | Supplier: %s | Qty: %.1f | Price: %.2f",
                         rs.getInt("purchase_order_id"),
@@ -149,15 +149,16 @@ public class PurchaseOrderService {
 
         }
     }
+
     public static void showRealTimeIngredientPrices() {
-        try (Connection conn = DBConnection.getConnection()) {
-            String query = """
+        try (Connection conn = DBConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("""
                 SELECT i.name AS ingredient, s.name AS supplier, si.price_per_unit, si.updated_at
                 FROM supplier_ingredients si
                 JOIN ingredients i ON si.ingredient_id = i.ingredient_id
                 JOIN suppliers s ON si.supplier_id = s.supplier_id
-            """;
-            ResultSet rs = conn.createStatement().executeQuery(query);
+            """)) {
             System.out.println("\n📦 Real-Time Ingredient Prices:");
             while (rs.next()) {
                 System.out.printf("Ingredient: %s | Supplier: %s | Price: %.2f | Updated: %s\n",
@@ -170,23 +171,20 @@ public class PurchaseOrderService {
             System.out.println("❌ Error fetching supplier prices.");
             e.printStackTrace();
         }
-
     }
 
     public static void updateSupplierPrice(int ingredientId, double newPrice) {
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement update = conn.prepareStatement(
+                     "UPDATE supplier_ingredients SET price_per_unit = ?, updated_at = CURRENT_TIMESTAMP WHERE ingredient_id = ?");
+             PreparedStatement updateOrders = conn.prepareStatement(
+                     "UPDATE purchase_orders SET price = ? WHERE ingredient_id = ? AND status = 'Pending'")) {
             // 1. Update the supplier_ingredients table with new price and current timestamp
-            PreparedStatement update = conn.prepareStatement(
-                    "UPDATE supplier_ingredients SET price_per_unit = ?, updated_at = CURRENT_TIMESTAMP WHERE ingredient_id = ?"
-            );
             update.setDouble(1, newPrice);
             update.setInt(2, ingredientId);
             update.executeUpdate();
 
             // 2. Update all pending purchase orders with the new price
-            PreparedStatement updateOrders = conn.prepareStatement(
-                    "UPDATE purchase_orders SET price = ? WHERE ingredient_id = ? AND status = 'Pending'"
-            );
             updateOrders.setDouble(1, newPrice);
             updateOrders.setInt(2, ingredientId);
             updateOrders.executeUpdate();
@@ -197,6 +195,4 @@ public class PurchaseOrderService {
             throw new RuntimeException("❌ Failed to update supplier price");
         }
     }
-
 }
-
